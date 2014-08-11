@@ -1,0 +1,295 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>NTH</name>
+    </assembly>
+    <members>
+        <member name="M:NTH.Collections.Generic.EnumerableExtensions.ForEach``1(System.Collections.Generic.IEnumerable{``0},System.Action{``0})">
+            <summary>Performs the specified action on each element of the IEnumerable.</summary>
+            <typeparam name="T">The type of the items.</typeparam>
+            <param name="source">The items to interate through.</param>
+            <param name="action">The Action delegate to perform on each element of the IEnumerable.</param>
+        </member>
+        <member name="T:NTH.IO.BigEndianBinaryReader">
+            <summary>Reads primitive data types as binary big endian values in a specific encoding.</summary>
+            <filterpriority>2</filterpriority>
+        </member>
+        <member name="M:NTH.IO.BigEndianBinaryReader.#ctor(System.IO.Stream)">
+            <summary>Initializes a new instance of the <see cref="T:NTH.IO.BigEndianBinaryReader" /> class based on the supplied stream and using <see cref="T:System.Text.UTF8Encoding" />.</summary>
+            <param name="input">A stream.</param>
+            <exception cref="T:System.ArgumentException">The stream does not support reading, the stream is null, or the stream is already closed.</exception>
+        </member>
+        <member name="M:NTH.IO.BigEndianBinaryReader.#ctor(System.IO.Stream,System.Text.Encoding)">
+            <summary>Initializes a new instance of the <see cref="T:NTH.IO.BigEndianBinaryReader" /> class based on the supplied stream and a specific character encoding.</summary>
+            <param name="input">The supplied stream. </param>
+            <param name="encoding">The character encoding. </param>
+            <exception cref="T:System.ArgumentException">The stream does not support reading, the stream is null, or the stream is already closed. </exception>
+            <exception cref="T:System.ArgumentNullException"><paramref name="encoding" /> is null. </exception>
+        </member>
+        <member name="T:NTH.IO.BigEndianBinaryWriter">
+            <summary>Writes primitive types in binary big endian to a stream and supports writing strings in a specific encoding.</summary>
+            <filterpriority>2</filterpriority>
+        </member>
+        <member name="M:NTH.IO.BigEndianBinaryWriter.#ctor(System.IO.Stream)">
+            <summary>Initializes a new instance of the <see cref="T:NTH.IO.BigEndianBinaryWriter" /> class based on the supplied stream and using UTF-8 as the encoding for strings.</summary>
+            <param name="output">The output stream.</param>
+            <exception cref="T:System.ArgumentException">The stream does not support writing, or the stream is already closed.</exception>
+            <exception cref="T:System.ArgumentNullException"><paramref name="output" /> is null.</exception>
+        </member>
+        <member name="M:NTH.IO.BigEndianBinaryWriter.#ctor(System.IO.Stream,System.Text.Encoding)">
+            <summary>Initializes a new instance of the <see cref="T:NTH.IO.BigEndianBinaryWriter" /> class based on the supplied stream and a specific character encoding.</summary>
+            <param name="output">The supplied stream.</param>
+            <param name="encoding">The character encoding.</param>
+            <exception cref="T:System.ArgumentException">The stream does not support writing, or the stream is already closed.</exception>
+            <exception cref="T:System.ArgumentNullException"><paramref name="output" /> or <paramref name="encoding" /> is null.</exception>
+        </member>
+        <member name="M:NTH.MathEx.Pow(System.Int32,System.Int32)">
+            <summary>Returns a specified number raised to the specified power.</summary>
+            <returns>The number <paramref name="x" /> raised to the power <paramref name="y" />.</returns>
+            <param name="x">An integer to be raised to a power.</param>
+            <param name="y">An integer that specifies a power.</param>
+            <filterpriority>1</filterpriority>
+        </member>
+        <member name="M:NTH.MathEx.Pow(System.Int64,System.Int64)">
+            <summary>Returns a specified number raised to the specified power.</summary>
+            <returns>The number <paramref name="x" /> raised to the power <paramref name="y" />.</returns>
+            <param name="x">A long integer to be raised to a power.</param>
+            <param name="y">A long integer that specifies a power.</param>
+            <filterpriority>1</filterpriority>
+        </member>
+        <member name="M:NTH.MathEx.Min(System.Int32,System.Int32,System.Int32)">
+            <summary>Returns the smaller of three 32-bit signed integers.</summary>
+            <returns>Parameter <paramref name="a" />, <paramref name="b" /> or <paramref name="c" />, whichever is smaller.</returns>
+            <param name="a">The first of three 32-bit signed integers to compare.</param>
+            <param name="b">The second of three 32-bit signed integers to compare.</param>
+            <param name="c">The second of three 32-bit signed integers to compare.</param>
+            <filterpriority>1</filterpriority>
+        </member>
+        <member name="M:NTH.MathEx.Max(System.Int32,System.Int32,System.Int32)">
+            <summary>Returns the larger of three 32-bit signed integers.</summary>
+            <returns>Parameter <paramref name="a" />, <paramref name="b" /> or <paramref name="c" />, whichever is larger.</returns>
+            <param name="a">The first of three 32-bit signed integers to compare.</param>
+            <param name="b">The second of three 32-bit signed integers to compare.</param>
+            <param name="c">The second of three 32-bit signed integers to compare.</param>
+            <filterpriority>1</filterpriority>
+        </member>
+        <member name="F:NTH.MathEx.TwoPI">
+            <summary> π * 2 </summary>
+        </member>
+        <member name="F:NTH.MathEx.PIOverTwo">
+            <summary> π / 2 </summary>
+        </member>
+        <member name="M:NTH.MathEx.GCD(System.Int32[])">
+            <summary>Calculates the greatest common divisor of a set of integer values.</summary>
+            <param name="values">The set of values.</param>
+            <returns>Returns the greatest common divisor of the integer value set.</returns>
+        </member>
+        <member name="M:NTH.MathEx.GCD(System.Int64[])">
+            <summary>Calculates the greatest common divisor of a set of integer values.</summary>
+            <param name="values">The set of values.</param>
+            <returns>Returns the greatest common divisor of the integer value set.</returns>
+        </member>
+        <member name="M:NTH.MathEx.Lerp(System.Single,System.Single,System.Single)">
+            <summary>Linearly interpolates between two values.</summary>
+            <param name="value1">The value1.</param>
+            <param name="value2">The value2.</param>
+            <param name="amount">The amount.</param>
+            <remarks>
+            No Unit Tests necessary. See MSDN for XNA's Lerp: http://msdn.microsoft.com/en-us/library/microsoft.xna.framework.mathhelper.lerp.aspx
+            Formula:
+            value1 + (value2 - value1) * amount
+            </remarks>
+        </member>
+        <member name="M:NTH.MathEx.Lerp(System.Double,System.Double,System.Double)">
+            <summary>Linearly interpolates between two values.</summary>
+            <param name="value1">The value1.</param>
+            <param name="value2">The value2.</param>
+            <param name="amount">The amount.</param>
+            <remarks>
+            No Unit Tests necessary. See MSDN for XNA's Lerp: http://msdn.microsoft.com/en-us/library/microsoft.xna.framework.mathhelper.lerp.aspx
+            Formula:
+            value1 + (value2 - value1) * amount
+            </remarks>
+        </member>
+        <member name="M:NTH.MathEx.GCD(System.Int32,System.Int32)">
+            <summary>Calculates the greatest common divisor of two values.</summary>
+            <param name="a">The first value.</param>
+            <param name="b">The second value.</param>
+            <returns>Returns the greatest common divisor of the two values.</returns>
+        </member>
+        <member name="M:NTH.MathEx.GCD(System.Int64,System.Int64)">
+            <summary>Calculates the greatest common divisor of two values.</summary>
+            <param name="a">The first value.</param>
+            <param name="b">The second value.</param>
+            <returns>Returns the greatest common divisor of the two values.</returns>
+        </member>
+        <member name="M:NTH.MathEx.LCM(System.Int32,System.Int32)">
+            <summary>Calculates the least common multiple of two values.</summary>
+            <param name="a">The first value.</param>
+            <param name="b">The second value.</param>
+            <returns>Returns the least common multiple of the two values.</returns>
+        </member>
+        <member name="M:NTH.MathEx.LCM(System.Int64,System.Int64)">
+            <summary>Calculates the least common multiple of two values.</summary>
+            <param name="a">The first value.</param>
+            <param name="b">The second value.</param>
+            <returns>Returns the least common multiple of the two values.</returns>
+        </member>
+        <member name="M:NTH.MathEx.WrapAngle(System.Single)">
+            <summary>Reduces a given angle to a value between π and -π.</summary>
+            <param name="angle">The angle (radian).</param>
+        </member>
+        <member name="M:NTH.MathEx.WrapAngle(System.Double)">
+            <summary>Reduces a given angle to a value between π and -π.</summary>
+            <param name="angle">The angle (radian).</param>
+        </member>
+        <member name="M:NTH.MathEx.ToDegrees(System.Double)">
+            <summary>Converts radians to degrees.</summary>
+            <param name="radians">The angle in radians.</param>
+            <returns>The angle in degrees.</returns>
+        </member>
+        <member name="M:NTH.MathEx.ToDegrees(System.Single)">
+            <summary>Converts radians to degrees.</summary>
+            <param name="radians">The angle in radians.</param>
+            <returns>The angle in degrees.</returns>
+        </member>
+        <member name="M:NTH.MathEx.ToRadians(System.Double)">
+            <summary>Converts degrees to radians.</summary>
+            <param name="degrees">The angle in degrees.</param>
+            <returns>The angle in radians.</returns>
+        </member>
+        <member name="M:NTH.MathEx.ToRadians(System.Single)">
+            <summary>Converts degrees to radians.</summary>
+            <param name="degrees">The angle in degrees.</param>
+            <returns>The angle in radians.</returns>
+        </member>
+        <member name="F:NTH.PrefixType.Unknown">
+            <summary>???</summary>
+        </member>
+        <member name="F:NTH.PrefixType.Decimal">
+            <summary>Decimal prefix. See <see cref="!:https://en.wikipedia.org/wiki/Binary_prefix">Wikipedia</see>.</summary>
+        </member>
+        <member name="F:NTH.PrefixType.Binary">
+            <summary>Decimal prefix. See <see cref="!:https://en.wikipedia.org/wiki/Binary_prefix">Wikipedia</see>.</summary>
+        </member>
+        <member name="T:NTH.Security.Cryptography.Adler32">
+            <summary>Implements a 32-bit ADLER-32 hash algorithm.</summary>
+            <remarks>
+            This class was evaluated from this forum post:
+            http://forum.singul4rity.com/thread-24.html
+            </remarks>
+        </member>
+        <member name="F:NTH.Security.Cryptography.Adler32.ModuloValue">
+            <summary>Base for modulo arithmetic</summary>
+        </member>
+        <member name="F:NTH.Security.Cryptography.Adler32.NMax">
+            <summary>Number of iterations we can safely do before applying the modulo.</summary>
+        </member>
+        <member name="M:NTH.Security.Cryptography.Adler32.#ctor">
+            <summary>Initializes a new instance of <see cref="T:NTH.Security.Cryptography.Adler32" />.</summary>
+        </member>
+        <member name="M:NTH.Security.Cryptography.Adler32.Initialize">
+            <summary>Initializes <see cref="T:NTH.Security.Cryptography.Adler32" />.</summary>
+        </member>
+        <member name="M:NTH.Security.Cryptography.Adler32.Compute(System.Byte[])">
+            <summary>Computes the Adler32 checksum for the given data.</summary>
+            <param name="data">The data to compute the checksum of.</param>
+        </member>
+        <member name="M:NTH.Security.Cryptography.Adler32.Compute(System.Byte[],System.UInt32)">
+            <summary>Computes the Adler32 checksum for the given data.</summary>
+            <param name="data">The data to compute the checksum of.</param>
+            <param name="initialValue">Initial value or previous result. Use 1 for the first transformation.</param>
+        </member>
+        <member name="M:NTH.Security.Cryptography.Adler32.Compute(System.Byte[],System.UInt32,System.Int32,System.Int32)">
+            <summary>Computes the Adler32 checksum for the given data.</summary>
+            <param name="data">The data to compute the checksum of.</param>
+            <param name="initialValue">Initial value or previous result. Use 1 for the first transformation.</param>
+            <param name="start">Index of first byte to compute checksum for.</param>
+            <param name="length">Number of bytes to compute checksum for.</param>
+        </member>
+        <member name="M:NTH.Security.Cryptography.Adler32.CalculateHash(System.Byte[],System.UInt32,System.Int32,System.Int32)">
+            <summary>Computes the Adler32 checksum for the given data.</summary>
+            <param name="buffer">The data to compute the checksum of.</param>
+            <param name="initialValue">Initial value or previous result. Use 1 for the first transformation.</param>
+            <param name="start">Index of first byte to compute checksum for.</param>
+            <param name="length">Number of bytes to compute checksum for.</param>
+            <returns>The checksum of the given data.</returns>
+        </member>
+        <member name="T:NTH.Security.Cryptography.Crc32">
+             <summary>Implements a 32-bit CRC hash algorithm compatible with Zip etc.</summary>
+             <remarks>
+             If you need to call multiple times for the same data either use the HashAlgorithm
+             interface or remember that the result of one Compute call needs to be ~ (XOR) before
+             being passed in as the seed for the next Compute call.
+            
+             This class was imported from Damien Guard:
+             https://github.com/damieng/DamienGKit/blob/master/CSharp/DamienG.Library/Security/Cryptography/Crc32.cs
+             Originally published at http://damieng.com/blog/2006/08/08/calculating_crc32_in_c_and_net
+             It was adapted to the coding standards of this project.
+             </remarks>
+        </member>
+        <member name="M:NTH.Security.Cryptography.Crc32.#ctor">
+            <summary>Initializes a new instance of <see cref="T:NTH.Security.Cryptography.Crc32" />.</summary>
+        </member>
+        <member name="M:NTH.Security.Cryptography.Crc32.Initialize">
+            <summary>Initializes <see cref="T:NTH.Security.Cryptography.Crc32" />.</summary>
+        </member>
+        <member name="T:NTH.Security.Cryptography.RSACryptoServiceProviderExtensions">
+            <remarks>
+            This file was evaluated from <see cref="!:http://www.christian-etter.de/?p=771">CE's Blog</see>.
+            The code has been adopted to the coding standards of this project.
+            It was published with the approval of the original author.
+            </remarks>
+        </member>
+        <member name="T:NTH.SemanticVersion">
+            <summary>
+            Represents a semantic version 2.0.0 as described in <a href="http://semver.org/spec/v2.0.0.html">the SemVer specification</a>.
+            </summary>
+        </member>
+        <member name="M:NTH.SemanticVersion.TryParseDotSeparatedBuildMetadata(System.String,System.Collections.Generic.IList{NTH.BuildMetadata}@)">
+            <remarks>
+            &lt;dot-separated build identifiers&lt; ::= &lt;build identifier&lt; | &lt;build identifier&lt; "." &lt;dot-separated build identifiers&lt;
+            </remarks>
+        </member>
+        <member name="M:NTH.SemanticVersion.TryParseDotSeparatedPreReleaseIdentifiers(System.String,System.Collections.Generic.IList{NTH.PreReleaseIdentifier}@)">
+            <remarks>
+            &lt;dot-separated pre-release identifiers&lt; ::= &lt;pre-release identifier&lt; | &lt;pre-release identifier&lt; "." &lt;dot-separated pre-release identifiers&lt;
+            </remarks>
+        </member>
+        <member name="M:NTH.SemanticVersion.TryParsePreReleaseIdentifier(System.String,NTH.PreReleaseIdentifier@)">
+            <remarks>
+            &lt;pre-release identifier&lt; ::= &lt;alphanumeric identifier&lt;| &lt;numeric identifier&lt;
+            </remarks>
+        </member>
+        <member name="M:NTH.SemanticVersion.TryParseNumericIdentifier(System.String,System.String@)">
+            <remarks>
+            &lt;build identifier&lt; ::= &lt;alphanumeric identifier&lt; | &lt;digits&lt;
+            </remarks>
+        </member>
+        <member name="M:NTH.SemanticVersion.TryParseAlphaNumericIdentifier(System.String,System.String@)">
+            <remarks>
+            &lt;alphanumeric identifier&lt; ::= &lt;non-digit&lt; | &lt;non-digit&lt; &lt;identifier characters&lt; | &lt;identifier characters&lt; &lt;non-digit&lt; | &lt;identifier characters&lt; &lt;non-digit&lt; &lt;identifier characters&lt;
+            </remarks>
+        </member>
+        <member name="T:NTH.Text.Formatting.ByteSizeFormatter">
+            <summary>Format a byte size long to a human readable format.</summary>
+        </member>
+        <member name="M:NTH.Text.Formatting.ByteSizeFormatter.FormatBytes(System.Int64)">
+            <summary>
+            Formats a long representing a byte size to a human readable format. Uses the Windows API.
+            Because it uses the Windows API, it always calculates using the binary power (1024), but returns the decimal prefix (e.g. KB).
+            </summary>
+            <param name="byteCount">The number of bytes</param>
+            <returns>Formatted string.</returns>
+        </member>
+        <member name="M:NTH.Text.Formatting.ByteSizeFormatter.FormatBytes(System.Int64,System.Boolean)">
+            <summary>
+            Formats a long representing a byte size to a human readable format. Uses the Windows API.
+            Because it uses the Windows API, it always calculates using the binary power (1024), but returns the decimal prefix (e.g. KB).
+            </summary>
+            <param name="byteCount">The number of bytes</param>
+            <param name="useBinaryPrefix">If this parameter is true, it returns a binary prefixed value. If not the return value is using a decimal prefix. Note that the value always calculates with binary powers.</param>
+            <returns>Formatted string.</returns>
+        </member>
+    </members>
+</doc>
