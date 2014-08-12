@@ -1,7 +1,17 @@
+# Lizenzsystem mit RSA-Signaturen
+Aufgrund der Nachfrage habe ich mich mal dazu durchgerungen, einen kleinen Beitrag dazu zu verfassen.
 
 ## Voraussetzungen
 Um die Schritte in diesem Beitrag nachvollziehen zu können, solltest Du grundlegende Kenntnisse zu Public-Private-Key-Kryptografie haben. Hier geht es speziell um das Signieren von Daten.
 Außerdem solltest Du die grundlegenden Konzepte von C# (bzw. .NET) beherrschen. Ich zeige es hier mit PHP als Server-Backend, weshalb es auch nicht übel wäre, wenn Du PHP-Code zumindest lesen könntest.
+#### Software
+Softwareseitig benötigst Du zum Nachvollziehen des kompletten Beitrags:
+
+- Visual Studio oder eine andere Möglichkeit, C#-Code zu kompilieren
+- Einen Web-Server mit PHP >= 5.4
+- Einen Editor für PHP-Dateien
+- OpenSSL oder eine andere Möglichkeit, RSA-Schlüsselpaare zu erzeugen (z. B. via .NET und ToXmlString())
+
 
 ## Verbesser mich!
 De ganze Beitrag inklusive Quelltext befindet sich auf GitHub und kann dort von Jedem verbessert werden:
@@ -307,7 +317,7 @@ Um Lizenzen auszustellen benötigen wir den Private Key. Bitte achte darauf, das
 
 Um dies zu tun bietet sich ein Server an.
 
-Mit PHP und der PHPSecLib könnte es wie folgt gehen:
+Mit PHP und der PHPSecLib könnte es wie folgt gehen. Die PHPSecLib bekommst du [hier](http://phpseclib.sourceforge.net). Falls du das GitHub-Repo geklont hast, ist es dort ebenfalls dabei.
 ```PHP
 // Abbildung des Enums, das wir auch in der Client-Anwendung haben
 class LicenseType
@@ -417,15 +427,18 @@ if(license.IsValid)
     Console.WriteLine("Lizenztyp: " + license.Type);
 ```
 
-#### Vorteile und Nachteile dieser Methode
+#### Was es zu beachten gibt
+- Die Schlüssel sollten lang genug gewühlt werden (mindestens 2048 Bit sollten ausreichen)
+- Niemand anders sollte auf den Private Key Zugriff haben, da das komplette System sonst hinfällig ist.
 
+#### Vorteile und Nachteile dieser Methode
 ##### Vorteile
 - Keine Internetverbindung zum Validieren der Lizenz notwendig
 - Key-Generatoren sind so gut wie unmöglich, solange der Schlüssel lang genug gewählt wurde und der Private key privat bleibt
-- Geringe Fehleranfälligkeit, da man nicht auf Firewall-Umgebungen, die UAC oder ähnliches Rücksicht nehmen muss.
+- Geringe Fehleranfälligkeit, da man nicht auf Firewall-/Firmen-Umgebungen, die UAC oder ähnliches Rücksicht nehmen muss.
 
 ##### Nachteile
-- Sehr einfach zu Cracken
+- Sehr einfach zu cracken
 
 #### Was noch gemacht werden muss
 - License.TryParse(), bei der keine Exception geworfen wird
