@@ -4,8 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using NTH.Text;
-using NTH.Security.Cryptography;
 using System.Security.Cryptography;
 
 namespace LicenseSystem
@@ -14,7 +12,12 @@ namespace LicenseSystem
     {
         static void Main(string[] args)
         {
-            var license = License.Parse("----BEGIN LICENSE-----...");
+            var license = License.Parse(@"--------BEGIN LICENSE--------
+Erika Mustermann
+2
+DQ6dYrgBlcnIZ89FHDEoBZO/rugEUL3Uaizq/+1tN4zZQIsyiwWsLI2aeu2Li2nUTb9m6g+BSoADk3rRYZfvTbKP3SfP9YsfwU3zzXkSxBwlc7sKDVmtlL4O/NgE2KgJh18TyscBN/JOMEeK6N/TuUAlo42A1jZjf3JYh4ae134=
+---------END LICENSE---------");
+
             if (license.IsValid)
             {
                 Console.WriteLine("Gültige Lizenz!");
@@ -32,12 +35,7 @@ namespace LicenseSystem
 
     class License
     {
-        private const string _publicKey = @"-----BEGIN PUBLIC KEY-----
-MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDwIqfvxEjqHu8048x4wJ5EId6A
-SAbWdH5fzgHxvew5kXqECMNcXzRqDVnDVPQT41UeZs8HxouBE+ZA8DfnVlHwP4EI
-eigOUaqy0sseKpO71tupFU+2LjpcF6O7cVuLjt6476iYfSyrssK4hnmzVYGZNz16
-OSR9z/SuTd8BhohG4QIDAQAB
------END PUBLIC KEY-----";
+        private const string _publicKey = @"<RSAKeyValue><Modulus>8CKn78RI6h7vNOPMeMCeRCHegEgG1nR+X84B8b3sOZF6hAjDXF80ag1Zw1T0E+NVHmbPB8aLgRPmQPA351ZR8D+BCHooDlGqstLLHiqTu9bbqRVPti46XBeju3Fbi47euO+omH0sq7LCuIZ5s1WBmTc9ejkkfc/0rk3fAYaIRuE=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>";
 
         private readonly bool _isValid;
         public bool IsValid { get { return _isValid; } }
@@ -78,23 +76,23 @@ OSR9z/SuTd8BhohG4QIDAQAB
             using (var provider = new RSACryptoServiceProvider())
             {
                 // Den Public Key festlegen
-                provider.ImportPublicKeyPem(_publicKey);
+                provider.FromXmlString(_publicKey);
+                provider.PersistKeyInCsp = false;
 
                 // Daten mit VerifyData überprüfen
                 // Übergeben wird hier der Datenpuffer, das Hashing-Verfahren für die Signatur und Signatur selbst
                 // In diesem Fall verwende ich SHA1
-                return provider.VerifyData(dataBuffer, CryptoConfig.MapNameToOID("SHA1"), signature);
+                return provider.VerifyData(dataBuffer, new SHA1CryptoServiceProvider(), signature);
                 // Wenn die Daten gültig sind, sind die Lizenzdaten ebenfalls gültig. Wenn nicht, dann nicht.
             }
         }
 
-        private const string LicensePrefix = "^((-+?)BEGIN LICENSE(-+?))";
-        private const string LicenseSuffix = "((-+?)END LICENSE(-+?)\\s?)$";
         public static License Parse(string licenseData)
         {
-            const string pattern = LicensePrefix + "(?<data>.+?)" + LicenseSuffix; // Pattern, um an die Daten zwischen BEGIN und END zu kommen
+            // Pattern, um an die Daten zwischen BEGIN und END zu kommen
+            const string pattern = "^\\s*-+BEGIN LICENSE-+(?<data>(\\s|.)*?)-+END LICENSE-+\\s*$";
 
-            var match = Regex.Match(licenseData, pattern); // string auf Muster prüfen
+            var match = Regex.Match(licenseData, pattern, RegexOptions.IgnoreCase); // string auf Muster prüfen
             if (!match.Success) // Wenn das Muster nicht gematched wurde, ist der Lizenz-String nicht lesbar und somit ungültig.
                 throw new FormatException();
 
@@ -136,10 +134,22 @@ OSR9z/SuTd8BhohG4QIDAQAB
         private static string GeneralizeDataString(string someString)
         {
             return someString.StripWhiteSpace().ToUpperInvariant();
+        }
+    }
 
-            // StripWhiteSpace() kommt aus der NTH-Library.
-            // Die Methode ist wie folgt definiert:
-            // https://github.com/nikeee/nth/blob/7813f6b80e54afc539601c4c74edfe880f5bbd26/src/NTH/NTH/Text/StringExtensions.cs#L37
+    internal static class StringExtensions
+    {
+        public static string StripWhiteSpace(this string value)
+        {
+            if (value == null)
+                return null;
+            if (value.Length == 0 || value.Trim().Length == 0)
+                return string.Empty;
+            var sb = new StringBuilder(value.Length);
+            for (int i = 0; i < value.Length; ++i)
+                if (!char.IsWhiteSpace(value[i]))
+                    sb.Append(value[i]);
+            return sb.ToString();
         }
     }
 
