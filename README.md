@@ -211,7 +211,7 @@ private static byte[] DecodeDataFromString(string value)
 }
 ```
 
-Wie gesagt. Ich verwende hier ein Format, das ich von Subliem Text abgeschaut habe. Du kannst Dir auch ein eigenes ausdenken, das auf z. B. XML oder JSON basiert, um Dir das Auslesen zu vereinfachen.
+Wie gesagt. Ich verwende hier ein Format, das ich von Sublime Text abgeschaut habe. Du kannst Dir auch ein eigenes ausdenken, das auf z. B. XML oder JSON basiert, um Dir das Auslesen zu vereinfachen.
 
 
 ### 2. Standardisierung der übergebenen Daten in einheitliches Format
