@@ -367,7 +367,8 @@ class LicenseCreator
 
 Abschluss
 
-Testen wir es einmal.
+Das war's.
+
 Auf der Serverseite können wir nun mit Hilfe der LicenseCreator-Klasse eine Lizenz erstellen:
 
 $license = LicenseCreator::CreateLicense("Erika Mustermann", LicenseType::Commercial);
@@ -391,10 +392,9 @@ D8B8B69D44DBF66EA0F814A800393
 Dieser String kann am Client validiert werden.
 
 var license = License.Parse(lizenzString);
-Console.WriteLine("Lizenz gültig? " + license.Isvalid);
-
-
-
+Console.WriteLine("Lizenz gültig? " + license.IsValid);
+if(license.IsValid)
+	Console.WriteLine("Lizenztyp: " + license.Type);
 
 Vorteile und Nachteile dieser Methode.
 
@@ -405,6 +405,10 @@ Vorteile:
 
 Nachteile
 - Sehr einfach zu Cracken
+
+Was noch gemacht werden muss:
+- License.TryParse(), bei der keine Exception geworfen wird
+- Server-Beispiel mit Node.js
 
 /*
 
