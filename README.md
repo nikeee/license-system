@@ -456,15 +456,15 @@ File.WriteAllText("public_key.xml", rsa.ToXmlString(false));
 - Server-Beispiel mit Node.js
 
 #### "Einfach zu Cracken" vs "Keygens unmöglich":
-Das hört sich im ersten Moment recht widersprüchlich an, aber so ist es. Jemand könnte die Anwendung leicht cracken, indem an der entsprechenden Stelle einfach ein "return true;" eingefügt wird. Um dies zu tun, muss derjenige allerdings die Anwendung bearbeiten. Das hat den "Nachteil", dass wenn eine Update der Anwendung erscheint, dies erneut machen muss. Das bringt einen zusätzlichen Aufwand mit sich.
+Das hört sich im ersten Moment recht widersprüchlich an, aber so ist es. Jemand könnte die Anwendung leicht cracken, indem an der entsprechenden Stelle einfach ein "return true;" eingefügt wird. Um dies zu tun, muss derjenige allerdings die Anwendung bearbeiten. Das hat den "Nachteil", dass wenn ein Update der Anwendung erscheint, er dies erneut machen muss. Das bringt einen zusätzlichen Aufwand mit sich.
 
 #### Meine Meinung zu dem Thema:
 Ich finde, man sollte sein Programm nicht mit irgendwelchem "unknackbaren" Lizenzkram verwurschteln, was es am Ende nur fehleranfälliger und unbenutzbarer macht. Wirklich viel mehr geschützt ist es dadurch auch nicht.
 Generell sollte man IMO die Zeit lieber in die Funktionalität des Programms statt in ein komplexes Lizenzsystem stecken.
 Das hier gezeigte System ähnelt stark dem, welches u. A. bei Sublime Text zum Einsatz kommt.
-Ich finde diese Herangehensweise noch gut vertretbar, da sie recht simpel gehalten ist und trotzdem noch eine gute Hürde bietet.
-Dieser Beitrag soll nicht bedeuten, dass man in allen programmen so ein System anbieten soll. Nein, ganz und gar nicht. Ich bin ein freund von freier und offener Software und will lediglich zeigen, wie man diese Problemstellung angehen kann.
-Außerdem habe ich auf meiner Arbeit oft mich schlecht programmierter Software zu tun, die häufig wegen ignorant implementiertem Lizenzkram die Funktion verweigert.
+Ich finde diese Herangehensweise noch vertretbar, da sie recht simpel gehalten ist und trotzdem noch eine (kleine) Hürde bietet.
+Dieser Beitrag soll nicht bedeuten, dass man in allen Programmen so ein System einbauen soll. Nein, ganz und gar nicht. Ich bin ein freund von freier und offener Software und will lediglich zeigen, wie man diese Problemstellung angehen kann.
+Außerdem habe ich auf meiner Arbeit oft mit schlecht programmierter Software zu tun, die häufig wegen ignorant implementiertem Lizenzkram die Funktion verweigert.
 
 #### Disclaimer
 Das Übliche:
