@@ -65,7 +65,7 @@ DEADBEEFCAFEBABEC001D00DEBEEFEA7E5
 ### 0. Die Lizenz-Klasse
 Um den Lizenzkram besser vom restlichen Code der Anwendung zu trennen, legen wir eine Klasse für eine Lizenz an. Diese sieht bei mir jetzt so aus:
 
-```
+```C#
 class License
 {
     private const string _publicKey = ""; // TODO
@@ -100,7 +100,7 @@ class License
 ```
 
 Außerdem habe ich noch 3 verschiedene Lizenztypen gewählt, um zu zeigen, dass man noch weitere Daten in die Lizenz packen kann:
-```
+```C#
 enum LicenseType
 {
     SingleUser = 1,
@@ -113,7 +113,7 @@ Die Stellen, die mit "TODO" gekennzeichnet sind, werden wir in den nächsten Sch
 
 #### 0.5 Verwendung der Lizenz-Klasse
 Die Lizenzklasse kann am Ende so verwendet werden:
-```
+```C#
 var license = License.Parse("----BEGIN LICENSE-----...");
 if(license.IsValid)
 {
@@ -132,7 +132,7 @@ Der Konstruktor ist `protected`. Ich habe das in diesem Fall so gewählt, da ich
 Dieser Teil hat eigentlich noch nichts mit Kryptografie zu tun. Es geht nur um das einfache Einlesen der Daten aus dem Lizenzstring, um diese dann an den Konstruktor der License-Klasse zu übergeben.
 Der Parse-Teil sieht bei mir so aus:
 
-```
+```C#
 public static License Parse(string licenseData)
 {
     // Pattern, um an die Daten zwischen BEGIN und END zu kommen
@@ -218,14 +218,14 @@ Wie gesagt. Ich verwende hier ein Format, das ich von Sublime Text abgeschaut ha
 
 Da wir nicht sicher ein können, dass unser Benutzer seinen Namen leicht abgeändert hat, müssen wir das Gane in ein Standard-Format bringen. Dies ist sinnvoll, da z. B. "Erika Mustermann" und "erika Mustermann" den gleichen Namen bezeichnen, aber ansich unterschiedliche Strings sind.
 Hierfür habe ich folgende Funktion angelegt:
-```
+```C#
 private static string GeneralizeDataString(string someString)
 {
     return someString.StripWhiteSpace().ToUpperInvariant();
 }
 ```
 Die StripWhiteSpace-Funktion ist als String-Extension wie folgt definiert:
-```
+```C#
 internal static class StringExtensions
 {
     public static string StripWhiteSpace(this string value)
@@ -256,7 +256,7 @@ Dieser Schritt ist für alle Daten nötig, die für soetwas anfällig wären. In
 ### 3. Validierung der Daten mittels überprüfung der RSA-Signatur
 Nun kommt der eigentlich kryptografische Teil und auch die letzte Funktion der License-Klasse.
 
-```
+```C#
 private bool ValidateLicense(byte[] signature)
 {
     // Um die Lizenz auf Gültigkeit zu prüfen müssen alle zu prüfenden Parameter (Name, Typ) in einen Buffer gepackt werden
@@ -435,7 +435,7 @@ if(license.IsValid)
 
 #### Erstellen von Schlüsseln
 Dafür kannst Du OpenSSL oder andere Kryptosoftware verwenden. Wichtig ist nur, dass Du die Schlüssel später auch in der Anwendung verwenden kannst. Du kannst aber auch rein bei .NET bleiben. Ich mache es z. B. so:
-```
+```C#
 const int KeyLength = 2048;
 var rsa = new RSACryptoServiceProvider(KeyLength);
 File.WriteAllText("private_key.xml", rsa.ToXmlString(true));
