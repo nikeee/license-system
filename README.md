@@ -16,7 +16,7 @@ Ich verwende in diesem Beitrag auf der Client-Seite nur .NET-Boardmittel. Wenn D
 
 
 ## Verbesser mich!
-De ganze Beitrag inklusive Quelltext befindet sich auf GitHub und kann dort von Jedem verbessert werden:
+Der ganze Beitrag inklusive Quelltext befindet sich auf GitHub und kann dort von Jedem verbessert werden:
 [nikeee/license-system](https://github.com/nikeee/license-system)
 Falls Dir etwas auffällt oder du ein anderes Anliegen hast, kannst Du mir gerne eine Issue hinterlassen oder mich kontaktieren.
 
@@ -301,7 +301,7 @@ Der dazugehörige Public Key:
 
 Ich habe beide Schlüssel jetzt im XML-Format. Wenn Du andere Formate bevorzugst, kannst Du diese auch verwenden. Ich nehme jetzt dieses, da dieses Format von Haus aus mit .NET kompatibel ist und die PHP-Library PHPSecLib es ebenfalls unterstützt.
 
-Der Private Key wird zum erstellen einer Lizenzdatei verwendet. Dieser darf niemals preisgegeben werden. Sobald jemand im Besitz dieses Schlüssels ist, kann derjenige sich so viele Lizenzen erstellen, wie er will!(!). Der Private Key darf acuh keinesfalls irgendwo im Quelltext der Anwendung stehen, die an die Benutzer rausgeht!
+Der Private Key wird zum erstellen einer Lizenzdatei verwendet. Dieser darf niemals preisgegeben werden. Sobald jemand im Besitz dieses Schlüssels ist, kann derjenige sich so viele Lizenzen erstellen, wie er will!(!). Der Private Key darf auch keinesfalls irgendwo im Quelltext der Anwendung stehen, die an die Benutzer rausgeht!
 
 #### ...weiter im Text.
 
@@ -434,7 +434,7 @@ if(license.IsValid)
 - Niemand anders sollte auf den Private Key Zugriff haben, da das komplette System sonst hinfällig ist.
 
 #### Erstellen von Schlüsseln
-Dafür kansnt Du OpenSSL oder andere Kryptosoftware verwenden. Wichtig ist nur, dass Du die Schlüssel später auch in der Anwendung verwenden kannst. Du kannst aber auch rein bei .NET bleiben. Ich mache es z. B. so:
+Dafür kannst Du OpenSSL oder andere Kryptosoftware verwenden. Wichtig ist nur, dass Du die Schlüssel später auch in der Anwendung verwenden kannst. Du kannst aber auch rein bei .NET bleiben. Ich mache es z. B. so:
 ```
 const int KeyLength = 2048;
 var rsa = new RSACryptoServiceProvider(KeyLength);
