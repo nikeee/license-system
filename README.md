@@ -199,7 +199,7 @@ private static byte[] DecodeDataFromString(string value)
 }
 ```
 
-Wie gesagt. Ich verwende hier ein Format, das ich von Subliem Text abgeschaut habe. Du kannst dir auch ein eigenes ausdenken, das auf z. B. XML oder JSON basiert, um dir das Auslesen zu vereinfachen.
+Wie gesagt. Ich verwende hier ein Format, das ich von Subliem Text abgeschaut habe. Du kannst Dir auch ein eigenes ausdenken, das auf z. B. XML oder JSON basiert, um Dir das Auslesen zu vereinfachen.
 
 
 ### 2. Standardisierung der übergebenen Daten in einheitliches Format
@@ -303,7 +303,7 @@ Soweit sind wir fertig! Der Client kann nun eine Lizenz parsen, sie in eine Klas
 
 ### Lizenzen ausstellen
 
-Um Lizenzen auszustellen benötigen wir den Private Key. Bitte achte darauf, dass _niemand_ außer dir Zugriff auf diesen Schlüssel haben darf.
+Um Lizenzen auszustellen benötigen wir den Private Key. Bitte achte darauf, dass _niemand_ außer Dir Zugriff auf diesen Schlüssel haben darf.
 
 Um dies zu tun bietet sich ein Server an.
 
