@@ -17,7 +17,7 @@ Ich verwende in diesem Beitrag auf der Client-Seite nur .NET-Boardmittel. Wenn D
 
 ## Verbesser mich!
 De ganze Beitrag inklusive Quelltext befindet sich auf GitHub und kann dort von Jedem verbessert werden:
-<link>
+[nikeee/license-system](https://github.com/nikeee/license-system)
 Falls Dir etwas auffällt oder du ein anderes Anliegen hast, kannst Du mir gerne eine Issue hinterlassen oder mich kontaktieren.
 
 ## Was ist das Ziel?
@@ -27,7 +27,7 @@ Ziel ist es, einen Namen und zusätzliche, beliebige Daten mit einer Signatur zu
 Die Vorgehensweise bei der Methode, wie ich sie hier zeige, lässt sich in folgende Schritte unterteilen:
 
 1. Einlesen der Lizenz
-1.1. Auftrennung der Lizenz in einzelne Datenparameter (Name, Typ, Signatur)
+    1. Auftrennung der Lizenz in einzelne Datenparameter (Name, Typ, Signatur)
 2. Standardisierung der übergebenen Daten in einheitliches Format
 3. Validierung der Daten mittels überprüfung der RSA-Signatur
 
