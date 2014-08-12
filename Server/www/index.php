@@ -5,7 +5,7 @@ require_once 'LicenseCreator.php';
 header('Content-Type: text/plain; charset=utf-8');
 
 $licensee = 'Erika Mustermann';
-$licenseType = LicenseType::OpenSource;
+$licenseType = LicenseType::Commercial;
 $license = LicenseCreator::CreateLicense($licensee, $licenseType);
 
 echo "Lizenznehmer: $licensee\n";

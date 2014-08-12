@@ -1,8 +1,9 @@
 <?php
 
-require_once 'Crypt/RSA.php';
-require_once 'LicenseType.php';
+require_once 'Crypt/RSA.php'; // PHPSec's RSA-Klasse einbinden
+require_once 'LicenseType.php'; // Unsere Klasse mit den Enum-Werten des Lizenztypen einbinden
 
+// Generierung von Lizenzen in einer separaten Klasse
 class LicenseCreator
 {
 	// Niemals anderen Leuten zugänglich machen!
@@ -12,35 +13,43 @@ class LicenseCreator
 	{
 		// Gleiche Generalisierung wie am Client:
 		$licenseeGen = self::GeneralizeDataString($licensee);
-		$dataStr = $licenseeGen . (int)$type; // ERIKAMUSTERMANN2
+		$dataStr = $licenseeGen . (int)$type; // "ERIKAMUSTERMANN2"
+
+		$rsa = new Crypt_RSA(); // Neue RSA-Klasse erstellen
 
 		// Setzen der RSA-Optionen auf die, die auch am Client verwendet werden:
-		$rsa = new Crypt_RSA();
 		$rsa->setPrivateKeyFormat(CRYPT_RSA_PRIVATE_FORMAT_XML);
-		$rsa->loadKey(self::privateKey);
 		$rsa->setHash('SHA1');
 		$rsa->setSignatureMode(CRYPT_RSA_SIGNATURE_PKCS1);
 
+		// privaten Schlüssel laden
+		$rsa->loadKey(self::privateKey);
+
+		// Erstellen der Signatur
 		$signature = $rsa->sign($dataStr);
 
+		// Formatierte Lizenzdaten zurückgeben
 		return self::FormatLicense($licensee, $type, $signature);
 	}
 
 	private static function FormatLicense($licensee, $type, $signature)
 	{
-		$formattedSignature = self::EncodeDataToHeyString($signature);
-		$formattedSignature = chunk_split($formattedSignature, 29); // Signatur in 29-Zeichen-Blöcke aufteilen
+		// Binärdaten aus $signature in hexadezimal kodierten String umwandeln
+		$formattedSignature = self::EncodeDataToHexString($signature);
 
-		$l = "--------BEGIN LICENSE--------\n";
-		$l .= $licensee . "\n";
-		$l .= (int)$type . "\n";
-		$l .= trim($formattedSignature) . "\n";
-		$l .= "---------END LICENSE---------";
+		// Signatur in 29-Zeichen-Blöcke aufteilen (sieht schöner aus)
+		$formattedSignature = chunk_split($formattedSignature, 29);
+
+		$l = "--------BEGIN LICENSE--------\n"; // Unser Anfangsblock
+		$l .= $licensee . "\n"; // Der Name des Lizenznehmers
+		$l .= (int)$type . "\n"; // Der Lizenztyp als Int
+		$l .= trim($formattedSignature) . "\n"; // die in mehrere Zeilen aufgeteilte, kodierte Signatur
+		$l .= "---------END LICENSE---------"; // Ende der Lizenz
 
 		return $l;
 	}
 
-	private static function EncodeDataToHeyString($data)
+	private static function EncodeDataToHexString($data)
 	{
 		return strtoupper(bin2hex($data));
 	}
@@ -53,7 +62,7 @@ class LicenseCreator
 
 	private static function StripWhiteSpace($someString)
 	{
-		// Gleiche Funktion wie am Client
+		// Gleiche Funktion wie am Client, nur mit RegEx
 		return preg_replace('/\s+/', '', $someString);
 	}
 }
