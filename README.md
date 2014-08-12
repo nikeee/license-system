@@ -1,21 +1,22 @@
 
-Voraussetzungen:
+## Voraussetzungen
 Um die Schritte in diesem Beitrag nachvollziehen zu können, solltest du grundlegende Kenntnisse zu Public-Private-Key-Kryptografie haben. Hier geht es speziell um das Signieren von Daten.
-Außerdem solltest du die grundlegenden Konzepte von C# (bzw. .NET) beherrschen.
+Außerdem solltest du die grundlegenden Konzepte von C# (bzw. .NET) beherrschen. Ich zeige es hier mit PHP als Server-Backend, weshalb es auch nicht übel wäre, wenn du PHP-Code zumindest lesen könntest.
 
-Verbesser mich!
+## Verbesser mich!
 De ganze Beitrag inklusive Quelltext befindet sich auf GitHub und kann dort von jedem verbessert werden:
 <link>
+Falls dir etwas auffällt oder du ein anderes Anliegen hast, kannst du mir gerne eine Issue hinterlassen oder mich kontaktieren.
 
-Was ist das Ziel?
-Ziel ist es, einen Namen und zusätzlcihe, beliebige Daten mit einer Signatur zu versehen, sodass auf dieser Grundlage ein Lizanzsystem implementiert werden kann.
+## Was ist das Ziel?
+Ziel ist es, einen Namen und zusätzliche, beliebige Daten mit einer Signatur zu versehen, sodass auf dieser Grundlage ein Lizanzsystem implementiert werden kann.
 
-Bemerkungen
+### Bemerkungen
 
 Wenn ich in diesem Beitrag "Lizenz" erwähne, meine ich folgendes:
 Ein String, der den Namen des Lizenznehmers, weitere Lizenzdaten (z.B. Lizenztyp) und die kodierte digitage Signatur enthält.
 
-Okay, dann mal los!
+## Okay, dann mal los!
 
 Die Vorgehensweise bei der Methode, wie ich sie hier zeige, lässt sich in folgende Schritte unterteilen:
 1. Einlesen der Lizenz
@@ -23,18 +24,20 @@ Die Vorgehensweise bei der Methode, wie ich sie hier zeige, lässt sich in folge
 2. Standardisierung der übergebenen Daten in einheitliches Format
 3. Validierung der Daten mittels überprüfung der RSA-Signatur
 
-Aufbau der Lizenz
+### Aufbau der Lizenz
 Eine Lizenz ist wie folgt aufgebaut:
+```
 ----------BEGIN LICENSE----------
 <Vorname> <Nachname>
 <Lizenztyp>
 <Signatur>
 -----------END LICENSE-----------
+```
 
 Wie Du das letztendlich aufbaust, ist Dir überlassen. Man könnte hierbei auch mit XML oder JSON arbeiten, um die Verarbeitung etwas zu vereinfachen.
 
 Eine Lizenz sieht dann z. B. so aus:
-
+```
 ----------BEGIN LICENSE----------
 Erika Mustermann
 2
@@ -44,12 +47,13 @@ DEADBEEFCAFEBABEC001D00DEBEEFEA7E5
 DEADBEEFCAFEBABEC001D00DEBEEFEA7E5
 DEADBEEFCAFEBABEC001D00DEBEEFEA7E5
 -----------END LICENSE-----------
-
+```
 (Die Signaturdaten sind nicht gültig)
 
-0. Die Lizenz-Klasse
+### 0. Die Lizenz-Klasse
 Um den Lizenzkram besser vom restlichen Code der Anwendung zu trennen, legen wir eine Klasse für eine Lizenz an. Diese sieht bei mir jetzt so aus:
 
+```
 class License
 {
     private const string _publicKey = ""; // TODO
@@ -81,37 +85,42 @@ class License
 
     private static string GeneralizeDataString(string someString) { /* TODO */ }
 }
+```
 
 Außerdem habe ich noch 3 verschiedene Lizenztypen gewählt, um zu zeigen, dass man noch weitere Daten in die Lizenz packen kann:
+```
 enum LicenseType
 {
     SingleUser = 1,
     Commercial,
     OpenSource
 }
+```
 
 Die Stellen, die mit "TODO" gekennzeichnet sind, werden wir in den nächsten Schritten behandeln.
 
-0.5 Verwendung der Lizenz-Klasse
+#### 0.5 Verwendung der Lizenz-Klasse
 Die Lizenzklasse kann am Ende so verwendet werden:
-
+```
 var license = License.Parse("----BEGIN LICENSE-----...");
 if(license.IsValid)
 {
-	Console.WriteLine("Gültige Lizenz!");
-	Console.WriteLine("Lizenztyp: " + license.Type);
+    Console.WriteLine("Gültige Lizenz!");
+    Console.WriteLine("Lizenztyp: " + license.Type);
 }
 else
 {
-	Console.WriteLine("Ungültige Lizenz!");
+    Console.WriteLine("Ungültige Lizenz!");
 }
+```
 
 Der Konstruktor ist protected. Ich habe das in diesem Fall so gewählt, da ich möchte, dass man eine Instanz von License nur mit der Parse-Methode erstellen kann. Natürlich könnte man den Konstruktor auch öffentlich machen.
 
-1. Einlesen der Lizenz
+### 1. Einlesen der Lizenz
 Dieser Teil hat eigentlich noch nichts mit Kryptografie zu tun. Es geht nur um das einfache Einlesen der Daten aus dem Lizenzstring, um diese dann an den Konstruktor der License-Klasse zu übergeben.
 Der Parse-Teil sieht bei mir so aus:
 
+```
 public static License Parse(string licenseData)
 {
     // Pattern, um an die Daten zwischen BEGIN und END zu kommen
@@ -188,22 +197,23 @@ private static byte[] DecodeDataFromString(string value)
     }
     return ab;
 }
+```
 
 Wie gesagt. Ich verwende hier ein Format, das ich von Subliem Text abgeschaut habe. Du kannst dir auch ein eigenes ausdenken, das auf z. B. XML oder JSON basiert, um dir das Auslesen zu vereinfachen.
 
 
-2. Standardisierung der übergebenen Daten in einheitliches Format
+### 2. Standardisierung der übergebenen Daten in einheitliches Format
 
 Da wir nicht sicher ein können, dass unser Benutzer seinen Namen leicht abgeändert hat, müssen wir das Gane in ein Standard-Format bringen. Dies ist sinnvoll, da z. B. "Erika Mustermann" und "erika Mustermann" den gleichen Namen bezeichnen, aber ansich unterschiedliche Strings sind.
 Hierfür habe ich folgende Funktion angelegt:
-
+```
 private static string GeneralizeDataString(string someString)
 {
     return someString.StripWhiteSpace().ToUpperInvariant();
 }
-
+```
 Die StripWhiteSpace-Funktion ist als String-Extension wie folgt definiert:
-
+```
 internal static class StringExtensions
 {
     public static string StripWhiteSpace(this string value)
@@ -219,20 +229,22 @@ internal static class StringExtensions
         return sb.ToString();
     }
 }
+```
 
 Diese funktion entfernt sämtlichen Whitespace aus dem String und konvertiert anschließend alle Buchstaben in Großbuchstaben.
 So wird:
-"Erika Mustermann" zu "ErikaMustermann" zu "ERIKAMUSTERMANN"
+`"Erika Mustermann"` zu `"ErikaMustermann"` zu `"ERIKAMUSTERMANN"`
 ...und dementsprechend
-"erika Mustermann" zu "erikaMustermann" zu "ERIKAMUSTERMANN"
-Auch "eRikA musStermAnN" wird zu "ERIKAMUSTERMANN".
+`"erika Mustermann"` zu `"erikaMustermann"` zu `"ERIKAMUSTERMANN"`
+Auch `"eRikA musStermAnN"` wird zu `"ERIKAMUSTERMANN"`.
 Dadurch erreichen wir, dass die Lizenz weniger anfällig für Änderungen ist, die ein unerfahrener Benutzer eventuell vornehmen könnte (Änderung des String-Casings).
 
 Dieser Schritt ist für alle Daten nötig, die für soetwas anfällig wären. In diesem Beispiel sind das aber keine weiteren.
 
-3. Validierung der Daten mittels überprüfung der RSA-Signatur
+### 3. Validierung der Daten mittels überprüfung der RSA-Signatur
 Nun kommt der eigentlich kryptografische Teil und auch die letzte Funktion der License-Klasse.
 
+```
 private bool ValidateLicense(byte[] signature)
 {
     // Um die Lizenz auf Gültigkeit zu prüfen müssen alle zu prüfenden Parameter (Name, Typ) in einen Buffer gepackt werden
@@ -261,120 +273,127 @@ private bool ValidateLicense(byte[] signature)
         // Wenn die Daten gültig sind, sind die Lizenzdaten ebenfalls gültig. Wenn nicht, dann nicht.
     }
 }
-
+```
 Das war's schon fast! Wir benötigen nun noch ein Schlüsselpaar. Dieses kann man z. B. mit OpenSSL erzeugen. Ich nehme hier jetzt mal ein Beispiel-Schlüsselpaar, welches Du nicht improduktiven Einsatz verwenden solltest!(!)
 
 Mein Private Key in dem Fall:
+```XML
 <RSAKeyValue><Modulus>8CKn78RI6h7vNOPMeMCeRCHegEgG1nR+X84B8b3sOZF6hAjDXF80ag1Zw1T0E+NVHmbPB8aLgRPmQPA351ZR8D+BCHooDlGqstLLHiqTu9bbqRVPti46XBeju3Fbi47euO+omH0sq7LCuIZ5s1WBmTc9ejkkfc/0rk3fAYaIRuE=</Modulus><Exponent>AQAB</Exponent><P>/m1FEqol/KKhxOyGsK4GVuansBXhrAgpwMlYLT+vF0gy1jzYQDNNQXzeQFYH6gZY66RTYFl3JPNL8KXLyhwDLQ==</P><Q>8Z7DrGQsGhiLgg70j40/+AgfNKJB4SXY7FmyBmLPRiHkT2d3AyvzuNNf/hkHA2UMLQT4xewmkxK9MU2nDitzBQ==</Q><DP>uRVOSSyjo6u/WJzjwoVmMTNryymv2FC75vXRgmEwgxRPfxAWFGX9jmVC3LR432KsrwcEbDPI+4VNugsyO52zJQ==</DP><DQ>AJFY8FzD5cPNAB883+F7FwAd4qfG89p86gFD89PjnMyTlsQteWpvBi4o+ZXheFaScsCiPQTTCmFu5GDEVbowaQ==</DQ><InverseQ>7gQ8MGqjjrCAfOzrrC9ZuVdGRfEjUEdHMqiF+js7XNBvnT5lBznUOd+eta6CGo7S5hjU7D3CEzmVGQfxUsRZ1w==</InverseQ><D>6YSaERSs31dTwPghV+/gOFtDVzYzyAqi9iGMTHwnotfw70LiUAqZGuR+vO/5Jvn0RUsu2t3dvZkPWWkAxCtyIzALk8Brx1r8n76VHVWMzkZvOoqMa1/HdZCXM0TVlpnYVJjyUA8wzi4tzPIPv08lAGwYJzHcoMlFHkQ2npqflxE=</D></RSAKeyValue>
+```
 (Anmerkung: Beim XML-Format ist hier der Public Key mit dabei)
 
 Der dazugehörige Public Key:
+```XML
 <RSAKeyValue><Modulus>8CKn78RI6h7vNOPMeMCeRCHegEgG1nR+X84B8b3sOZF6hAjDXF80ag1Zw1T0E+NVHmbPB8aLgRPmQPA351ZR8D+BCHooDlGqstLLHiqTu9bbqRVPti46XBeju3Fbi47euO+omH0sq7LCuIZ5s1WBmTc9ejkkfc/0rk3fAYaIRuE=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>
+```
 
 Ich habe beide Schlüssel jetzt im XML-Format. Wenn Du andere Formate bevorzugst, kannst Du diese auch verwenden. Ich nehme jetzt dieses, da dieses Format von Haus aus mit .NET kompatibel ist und die PHP-Library PHPSecLib es ebenfalls unterstützt.
 
 Der Private Key wird zum erstellen einer Lizenzdatei verwendet. Dieser darf niemals preisgegeben werden. Sobald jemand im Besitz dieses Schlüssels ist, kann derjenige sich so viele Lizenzen erstellen, wie er will!(!). Der Private Key darf acuh keinesfalls irgendwo im Quelltext der Anwendung stehen, die an die Benutzer rausgeht!
 
-...weiter im Text.
+#### ...weiter im Text.
 
 Den Public Key fügen wir einfach oben als String-Wert der Konstante ein.
 
+```C#
 private const string _publicKey = @"<RSAKeyValue><Modulus>8CKn78RI6h7vNOPMeMCeRCHegEgG1nR+X84B8b3sOZF6hAjDXF80ag1Zw1T0E+NVHmbPB8aLgRPmQPA351ZR8D+BCHooDlGqstLLHiqTu9bbqRVPti46XBeju3Fbi47euO+omH0sq7LCuIZ5s1WBmTc9ejkkfc/0rk3fAYaIRuE=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>";
+```
 
 Soweit sind wir fertig! Der Client kann nun eine Lizenz parsen, sie in eine Klasse stecken und mittels RSA-Signatur validieren.
 
-Lizenzen ausstellen
+### Lizenzen ausstellen
 
 Um Lizenzen auszustellen benötigen wir den Private Key. Bitte achte darauf, dass _niemand_ außer dir Zugriff auf diesen Schlüssel haben darf.
 
 Um dies zu tun bietet sich ein Server an.
 
-Mit PHP und der PHPSecLib würde es wie folgt gehen:
-
+Mit PHP und der PHPSecLib könnte es wie folgt gehen:
+```PHP
 // Abbildung des Enums, das wir auch in der Client-Anwendung haben
 class LicenseType
 {
-	const Personal = 1;
-	const Commercial = 2;
-	const OpenSource = 3;
+    const Personal = 1;
+    const Commercial = 2;
+    const OpenSource = 3;
 }
+```
 
-
-
+```PHP
 // Generierung von Lizenzen in einer separaten Klasse
 class LicenseCreator
 {
-	// Niemals anderen Leuten zugänglich machen!
-	const privateKey = '<RSAKeyValue><Modulus>8CKn78RI6h7vNOPMeMCeRCHegEgG1nR+X84B8b3sOZF6hAjDXF80ag1Zw1T0E+NVHmbPB8aLgRPmQPA351ZR8D+BCHooDlGqstLLHiqTu9bbqRVPti46XBeju3Fbi47euO+omH0sq7LCuIZ5s1WBmTc9ejkkfc/0rk3fAYaIRuE=</Modulus><Exponent>AQAB</Exponent><P>/m1FEqol/KKhxOyGsK4GVuansBXhrAgpwMlYLT+vF0gy1jzYQDNNQXzeQFYH6gZY66RTYFl3JPNL8KXLyhwDLQ==</P><Q>8Z7DrGQsGhiLgg70j40/+AgfNKJB4SXY7FmyBmLPRiHkT2d3AyvzuNNf/hkHA2UMLQT4xewmkxK9MU2nDitzBQ==</Q><DP>uRVOSSyjo6u/WJzjwoVmMTNryymv2FC75vXRgmEwgxRPfxAWFGX9jmVC3LR432KsrwcEbDPI+4VNugsyO52zJQ==</DP><DQ>AJFY8FzD5cPNAB883+F7FwAd4qfG89p86gFD89PjnMyTlsQteWpvBi4o+ZXheFaScsCiPQTTCmFu5GDEVbowaQ==</DQ><InverseQ>7gQ8MGqjjrCAfOzrrC9ZuVdGRfEjUEdHMqiF+js7XNBvnT5lBznUOd+eta6CGo7S5hjU7D3CEzmVGQfxUsRZ1w==</InverseQ><D>6YSaERSs31dTwPghV+/gOFtDVzYzyAqi9iGMTHwnotfw70LiUAqZGuR+vO/5Jvn0RUsu2t3dvZkPWWkAxCtyIzALk8Brx1r8n76VHVWMzkZvOoqMa1/HdZCXM0TVlpnYVJjyUA8wzi4tzPIPv08lAGwYJzHcoMlFHkQ2npqflxE=</D></RSAKeyValue>';
+    // Niemals anderen Leuten zugänglich machen!
+    const privateKey = '<RSAKeyValue><Modulus>8CKn78RI6h7vNOPMeMCeRCHegEgG1nR+X84B8b3sOZF6hAjDXF80ag1Zw1T0E+NVHmbPB8aLgRPmQPA351ZR8D+BCHooDlGqstLLHiqTu9bbqRVPti46XBeju3Fbi47euO+omH0sq7LCuIZ5s1WBmTc9ejkkfc/0rk3fAYaIRuE=</Modulus><Exponent>AQAB</Exponent><P>/m1FEqol/KKhxOyGsK4GVuansBXhrAgpwMlYLT+vF0gy1jzYQDNNQXzeQFYH6gZY66RTYFl3JPNL8KXLyhwDLQ==</P><Q>8Z7DrGQsGhiLgg70j40/+AgfNKJB4SXY7FmyBmLPRiHkT2d3AyvzuNNf/hkHA2UMLQT4xewmkxK9MU2nDitzBQ==</Q><DP>uRVOSSyjo6u/WJzjwoVmMTNryymv2FC75vXRgmEwgxRPfxAWFGX9jmVC3LR432KsrwcEbDPI+4VNugsyO52zJQ==</DP><DQ>AJFY8FzD5cPNAB883+F7FwAd4qfG89p86gFD89PjnMyTlsQteWpvBi4o+ZXheFaScsCiPQTTCmFu5GDEVbowaQ==</DQ><InverseQ>7gQ8MGqjjrCAfOzrrC9ZuVdGRfEjUEdHMqiF+js7XNBvnT5lBznUOd+eta6CGo7S5hjU7D3CEzmVGQfxUsRZ1w==</InverseQ><D>6YSaERSs31dTwPghV+/gOFtDVzYzyAqi9iGMTHwnotfw70LiUAqZGuR+vO/5Jvn0RUsu2t3dvZkPWWkAxCtyIzALk8Brx1r8n76VHVWMzkZvOoqMa1/HdZCXM0TVlpnYVJjyUA8wzi4tzPIPv08lAGwYJzHcoMlFHkQ2npqflxE=</D></RSAKeyValue>';
 
-	public static function CreateLicense($licensee, $type)
-	{
-		// Gleiche Generalisierung wie am Client:
-		$licenseeGen = self::GeneralizeDataString($licensee);
-		$dataStr = $licenseeGen . (int)$type; // "ERIKAMUSTERMANN2"
+    public static function CreateLicense($licensee, $type)
+    {
+        // Gleiche Generalisierung wie am Client:
+        $licenseeGen = self::GeneralizeDataString($licensee);
+        $dataStr = $licenseeGen . (int)$type; // "ERIKAMUSTERMANN2"
 
-		$rsa = new Crypt_RSA(); // Neue RSA-Klasse erstellen
+        $rsa = new Crypt_RSA(); // Neue RSA-Klasse erstellen
 
-		// Setzen der RSA-Optionen auf die, die auch am Client verwendet werden:
-		$rsa->setPrivateKeyFormat(CRYPT_RSA_PRIVATE_FORMAT_XML);
-		$rsa->setHash('SHA1');
-		$rsa->setSignatureMode(CRYPT_RSA_SIGNATURE_PKCS1);
+        // Setzen der RSA-Optionen auf die, die auch am Client verwendet werden:
+        $rsa->setPrivateKeyFormat(CRYPT_RSA_PRIVATE_FORMAT_XML);
+        $rsa->setHash('SHA1');
+        $rsa->setSignatureMode(CRYPT_RSA_SIGNATURE_PKCS1);
 
-		// privaten Schlüssel laden
-		$rsa->loadKey(self::privateKey);
+        // privaten Schlüssel laden
+        $rsa->loadKey(self::privateKey);
 
-		// Erstellen der Signatur
-		$signature = $rsa->sign($dataStr);
+        // Erstellen der Signatur
+        $signature = $rsa->sign($dataStr);
 
-		// Formatierte Lizenzdaten zurückgeben
-		return self::FormatLicense($licensee, $type, $signature);
-	}
+        // Formatierte Lizenzdaten zurückgeben
+        return self::FormatLicense($licensee, $type, $signature);
+    }
 
-	private static function FormatLicense($licensee, $type, $signature)
-	{
-		// Binärdaten aus $signature in hexadezimal kodierten String umwandeln
-		$formattedSignature = self::EncodeDataToHexString($signature);
+    private static function FormatLicense($licensee, $type, $signature)
+    {
+        // Binärdaten aus $signature in hexadezimal kodierten String umwandeln
+        $formattedSignature = self::EncodeDataToHexString($signature);
 
-		// Signatur in 29-Zeichen-Blöcke aufteilen (sieht schöner aus)
-		$formattedSignature = chunk_split($formattedSignature, 29);
+        // Signatur in 29-Zeichen-Blöcke aufteilen (sieht schöner aus)
+        $formattedSignature = chunk_split($formattedSignature, 29);
 
-		$l = "--------BEGIN LICENSE--------\n"; // Unser Anfangsblock
-		$l .= $licensee . "\n"; // Der Name des Lizenznehmers
-		$l .= (int)$type . "\n"; // Der Lizenztyp als Int
-		$l .= trim($formattedSignature) . "\n"; // die in mehrere Zeilen aufgeteilte, kodierte Signatur
-		$l .= "---------END LICENSE---------"; // Ende der Lizenz
+        $l = "--------BEGIN LICENSE--------\n"; // Unser Anfangsblock
+        $l .= $licensee . "\n"; // Der Name des Lizenznehmers
+        $l .= (int)$type . "\n"; // Der Lizenztyp als Int
+        $l .= trim($formattedSignature) . "\n"; // die in mehrere Zeilen aufgeteilte, kodierte Signatur
+        $l .= "---------END LICENSE---------"; // Ende der Lizenz
 
-		return $l;
-	}
+        return $l;
+    }
 
-	private static function EncodeDataToHexString($data)
-	{
-		return strtoupper(bin2hex($data));
-	}
+    private static function EncodeDataToHexString($data)
+    {
+        return strtoupper(bin2hex($data));
+    }
 
-	private static function GeneralizeDataString($someString)
-	{
-		// Gleiche Funktion wie am Client
-		return strtoupper(self::StripWhiteSpace($someString));
-	}
+    private static function GeneralizeDataString($someString)
+    {
+        // Gleiche Funktion wie am Client
+        return strtoupper(self::StripWhiteSpace($someString));
+    }
 
-	private static function StripWhiteSpace($someString)
-	{
-		// Gleiche Funktion wie am Client, nur mit RegEx
-		return preg_replace('/\s+/', '', $someString);
-	}
+    private static function StripWhiteSpace($someString)
+    {
+        // Gleiche Funktion wie am Client, nur mit RegEx
+        return preg_replace('/\s+/', '', $someString);
+    }
 }
+```
 
-Abschluss
+### Abschluss
 
 Das war's.
 
 Auf der Serverseite können wir nun mit Hilfe der LicenseCreator-Klasse eine Lizenz erstellen:
-
+```PHP
 $license = LicenseCreator::CreateLicense("Erika Mustermann", LicenseType::Commercial);
-
+```
 Heraus kommt sowas:
-
+```
 --------BEGIN LICENSE--------
 Erika Mustermann
 2
@@ -388,37 +407,35 @@ D8B8B69D44DBF66EA0F814A800393
 137F24E30478AE8DFD3B94025A38D
 80D636637F725887869ED77E
 ---------END LICENSE---------
+```
 
 Dieser String kann am Client validiert werden.
-
+```C#
 var license = License.Parse(lizenzString);
 Console.WriteLine("Lizenz gültig? " + license.IsValid);
 if(license.IsValid)
-	Console.WriteLine("Lizenztyp: " + license.Type);
+    Console.WriteLine("Lizenztyp: " + license.Type);
+```
 
-Vorteile und Nachteile dieser Methode.
+#### Vorteile und Nachteile dieser Methode
 
-Vorteile:
+##### Vorteile
 - Keine Internetverbindung zum Validieren der Lizenz notwendig
 - Key-Generatoren sind so gut wie unmöglich, solange der Schlüssel lang genug gewählt wurde und der Private key privat bleibt
 - Geringe Fehleranfälligkeit, da man nicht auf Firewall-Umgebungen, die UAC oder ähnliches Rücksicht nehmen muss.
 
-Nachteile
+##### Nachteile
 - Sehr einfach zu Cracken
 
-Was noch gemacht werden muss:
+#### Was noch gemacht werden muss
 - License.TryParse(), bei der keine Exception geworfen wird
 - Server-Beispiel mit Node.js
 
-/*
-
-"Einfach zu Cracken" vs "Keygens unmöglich":
+#### "Einfach zu Cracken" vs "Keygens unmöglich":
 Das hört sich im ersten Moment recht widersprüchlich an, aber so ist es. Jemand könnte die Anwendung leicht cracken, indem an der entsprechenden Stelle einfach ein "return true;" eingefügt wird. Um dies zu tun, muss derjenige allerdings die Anwendung bearbeiten. Das hat den "Nachteil", dass wenn eine Update der Anwendung erscheint, dies erneut machen muss. Das bringt einen zusätzlichen Aufwand mit sich.
 
-Meine Meinung zu dem Thema:
-Ich finde, man sollte sein Programm nich tmit irgendwelchem "unknackbaren" Lizenzkram verwurschteln, was es am Ende nur fehleranfälliger und unbenutzbarer macht.
+#### Meine Meinung zu dem Thema:
+Ich finde, man sollte sein Programm nicht mit irgendwelchem "unknackbaren" Lizenzkram verwurschteln, was es am Ende nur fehleranfälliger und unbenutzbarer macht. Wirklich viel mehr geschützt ist es dadurch auch nicht.
 Generell sollte man IMO die Zeit lieber in die Funktionalität des Programms statt in ein komplexes Lizenzsystem stecken.
 Das hier gezeigte System ähnelt stark dem, welches u. A. bei Sublime Text zum Einsatz kommt.
-Die von mir hier gezeigte Methode ist IMO gut vertretbar und bietet trotzdem eine angemessene Hürde.
-
-*/
+Ich finde diese Herangehensweise noch gut vertretbar, da sie recht simpel gehalten ist und trotzdem noch eine gute Hürde bietet.
