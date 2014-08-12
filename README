@@ -199,10 +199,10 @@ Nun kommt der eigentlich kryptografische Teil und auch die letzte Funktion der L
 
 private bool ValidateLicense(byte[] signature)
 {
-	// Um die Lizenz auf Gültigkeit zu prüfen müssen alle zu prüfenden Parameter (Name, Typ) in einen Buffer gepackt werden
-	// Dies kann man wie folgt umsetzen:
+    // Um die Lizenz auf Gültigkeit zu prüfen müssen alle zu prüfenden Parameter (Name, Typ) in einen Buffer gepackt werden
+    // Dies kann man wie folgt umsetzen:
 
-	// Standardisierung des Namens des Lizenznehmers
+    // Standardisierung des Namens des Lizenznehmers
     var licenseeGen = GeneralizeDataString(this._licensee); // "ERIKAMUSTERMANN"
 
     // Zusammenfüren des Namens "ERIKAMUSTERMANN" mit dem Int-Wert des Lizenztyps (z. B. 2 für "Commercial").
@@ -214,13 +214,14 @@ private bool ValidateLicense(byte[] signature)
     // Crypto-Provider erstellen
     using (var provider = new RSACryptoServiceProvider())
     {
-    	// Den Public Key festlegen
-        provider.ImportPublicKeyPem(_publicKey);
+        // Den Public Key festlegen
+        provider.FromXmlString(_publicKey);
+        provider.PersistKeyInCsp = false;
 
         // Daten mit VerifyData überprüfen
         // Übergeben wird hier der Datenpuffer, das Hashing-Verfahren für die Signatur und Signatur selbst
         // In diesem Fall verwende ich SHA1
-        return provider.VerifyData(dataBuffer, CryptoConfig.MapNameToOID("SHA1"), signature);
+        return provider.VerifyData(dataBuffer, new SHA1CryptoServiceProvider(), signature);
         // Wenn die Daten gültig sind, sind die Lizenzdaten ebenfalls gültig. Wenn nicht, dann nicht.
     }
 }
@@ -228,31 +229,12 @@ private bool ValidateLicense(byte[] signature)
 Das war's schon fast! Wir benötigen nun noch ein Schlüsselpaar. Dieses kann man z. B. mit OpenSSL erzeugen. Ich nehme hier jetzt mal ein Beispiel-Schlüsselpaar, welches Du nicht improduktiven Einsatz verwenden solltest!(!)
 
 Mein Private Key in dem Fall:
------BEGIN RSA PRIVATE KEY-----
-MIICXgIBAAKBgQDwIqfvxEjqHu8048x4wJ5EId6ASAbWdH5fzgHxvew5kXqECMNc
-XzRqDVnDVPQT41UeZs8HxouBE+ZA8DfnVlHwP4EIeigOUaqy0sseKpO71tupFU+2
-LjpcF6O7cVuLjt6476iYfSyrssK4hnmzVYGZNz16OSR9z/SuTd8BhohG4QIDAQAB
-AoGBAOmEmhEUrN9XU8D4IVfv4DhbQ1c2M8gKovYhjEx8J6LX8O9C4lAKmRrkfrzv
-+Sb59EVLLtrd3b2ZD1lpAMQrciMwC5PAa8da/J++lR1VjM5GbzqKjGtfx3WQlzNE
-1ZaZ2FSY8lAPMM4uLczyD79PJQBsGCcx3KDJRR5ENp6an5cRAkEA/m1FEqol/KKh
-xOyGsK4GVuansBXhrAgpwMlYLT+vF0gy1jzYQDNNQXzeQFYH6gZY66RTYFl3JPNL
-8KXLyhwDLQJBAPGew6xkLBoYi4IO9I+NP/gIHzSiQeEl2OxZsgZiz0Yh5E9ndwMr
-87jTX/4ZBwNlDC0E+MXsJpMSvTFNpw4rcwUCQQC5FU5JLKOjq79YnOPChWYxM2vL
-Ka/YULvm9dGCYTCDFE9/EBYUZf2OZULctHjfYqyvBwRsM8j7hU26CzI7nbMlAkAA
-kVjwXMPlw80AHzzf4XsXAB3ip8bz2nzqAUPz0+OczJOWxC15am8GLij5leF4VpJy
-wKI9BNMKYW7kYMRVujBpAkEA7gQ8MGqjjrCAfOzrrC9ZuVdGRfEjUEdHMqiF+js7
-XNBvnT5lBznUOd+eta6CGo7S5hjU7D3CEzmVGQfxUsRZ1w==
------END RSA PRIVATE KEY-----
+<RSAKeyValue><Modulus>8CKn78RI6h7vNOPMeMCeRCHegEgG1nR+X84B8b3sOZF6hAjDXF80ag1Zw1T0E+NVHmbPB8aLgRPmQPA351ZR8D+BCHooDlGqstLLHiqTu9bbqRVPti46XBeju3Fbi47euO+omH0sq7LCuIZ5s1WBmTc9ejkkfc/0rk3fAYaIRuE=</Modulus><Exponent>AQAB</Exponent><P>/m1FEqol/KKhxOyGsK4GVuansBXhrAgpwMlYLT+vF0gy1jzYQDNNQXzeQFYH6gZY66RTYFl3JPNL8KXLyhwDLQ==</P><Q>8Z7DrGQsGhiLgg70j40/+AgfNKJB4SXY7FmyBmLPRiHkT2d3AyvzuNNf/hkHA2UMLQT4xewmkxK9MU2nDitzBQ==</Q><DP>uRVOSSyjo6u/WJzjwoVmMTNryymv2FC75vXRgmEwgxRPfxAWFGX9jmVC3LR432KsrwcEbDPI+4VNugsyO52zJQ==</DP><DQ>AJFY8FzD5cPNAB883+F7FwAd4qfG89p86gFD89PjnMyTlsQteWpvBi4o+ZXheFaScsCiPQTTCmFu5GDEVbowaQ==</DQ><InverseQ>7gQ8MGqjjrCAfOzrrC9ZuVdGRfEjUEdHMqiF+js7XNBvnT5lBznUOd+eta6CGo7S5hjU7D3CEzmVGQfxUsRZ1w==</InverseQ><D>6YSaERSs31dTwPghV+/gOFtDVzYzyAqi9iGMTHwnotfw70LiUAqZGuR+vO/5Jvn0RUsu2t3dvZkPWWkAxCtyIzALk8Brx1r8n76VHVWMzkZvOoqMa1/HdZCXM0TVlpnYVJjyUA8wzi4tzPIPv08lAGwYJzHcoMlFHkQ2npqflxE=</D></RSAKeyValue>
 
 Der dazugehörige Public Key:
------BEGIN PUBLIC KEY-----
-MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDwIqfvxEjqHu8048x4wJ5EId6A
-SAbWdH5fzgHxvew5kXqECMNcXzRqDVnDVPQT41UeZs8HxouBE+ZA8DfnVlHwP4EI
-eigOUaqy0sseKpO71tupFU+2LjpcF6O7cVuLjt6476iYfSyrssK4hnmzVYGZNz16
-OSR9z/SuTd8BhohG4QIDAQAB
------END PUBLIC KEY-----
+<RSAKeyValue><Modulus>8CKn78RI6h7vNOPMeMCeRCHegEgG1nR+X84B8b3sOZF6hAjDXF80ag1Zw1T0E+NVHmbPB8aLgRPmQPA351ZR8D+BCHooDlGqstLLHiqTu9bbqRVPti46XBeju3Fbi47euO+omH0sq7LCuIZ5s1WBmTc9ejkkfc/0rk3fAYaIRuE=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>
 
-Ich habe beide Schlüssel jetzt im PEM-Format. Wenn Du andere Formate bevorzugst, kannst Du diese auch verwenden. Ich nehme jetzt dieses, da dieses Format sehr portabel ist.
+Ich habe beide Schlüssel jetzt im XML-Format. Wenn Du andere Formate bevorzugst, kannst Du diese auch verwenden. Ich nehme jetzt dieses, da dieses Format von Haus aus mit .NET kompatibel ist und die PHP-Library PHPSecLib es ebenfalls unterstützt.
 
 Der Private Key wird zum erstellen einer Lizenzdatei verwendet. Dieser darf niemals preisgegeben werden. Sobald jemand im Besitz dieses Schlüssels ist, kann derjenige sich so viele Lizenzen erstellen, wie er will!(!). Der Private Key darf acuh keinesfalls irgendwo im Quelltext der Anwendung stehen, die an die Benutzer rausgeht!
 
@@ -260,12 +242,7 @@ Der Private Key wird zum erstellen einer Lizenzdatei verwendet. Dieser darf niem
 
 Den Public Key fügen wir einfach oben als String-Wert der Konstante ein.
 
-private const string _publicKey = @"-----BEGIN PUBLIC KEY-----
-MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDwIqfvxEjqHu8048x4wJ5EId6A
-SAbWdH5fzgHxvew5kXqECMNcXzRqDVnDVPQT41UeZs8HxouBE+ZA8DfnVlHwP4EI
-eigOUaqy0sseKpO71tupFU+2LjpcF6O7cVuLjt6476iYfSyrssK4hnmzVYGZNz16
-OSR9z/SuTd8BhohG4QIDAQAB
------END PUBLIC KEY-----";
+private const string _publicKey = @"<RSAKeyValue><Modulus>8CKn78RI6h7vNOPMeMCeRCHegEgG1nR+X84B8b3sOZF6hAjDXF80ag1Zw1T0E+NVHmbPB8aLgRPmQPA351ZR8D+BCHooDlGqstLLHiqTu9bbqRVPti46XBeju3Fbi47euO+omH0sq7LCuIZ5s1WBmTc9ejkkfc/0rk3fAYaIRuE=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>";
 
 Soweit sind wir fertig! Der Client kann nun eine Lizenz parsen, sie in eine Klasse stecken und mittels RSA-Signatur validieren.
 
