@@ -15,10 +15,6 @@ Bemerkungen
 Wenn ich in diesem Beitrag "Lizenz" erwähne, meine ich folgendes:
 Ein String, der den Namen des Lizenznehmers, weitere Lizenzdaten (z.B. Lizenztyp) und die kodierte digitage Signatur enthält.
 
-Um den Code übersichtlich zu halten werde ich in den Codebeispielen meine NTH-Library verwenden. An den Stellen, an denen ich sie verwende werde ich dies mit einem Kommentar kennzeichnen und ggf. Alternativen angeben. Falls Du den Code so übernehmen möchtest, ist die NTH-Library erforderlich. Diese kannst du via NuGet in dein Projekt installieren:
-Install-Package NTH
-
-
 Okay, dann mal los!
 
 Die Vorgehensweise bei der Methode, wie ich sie hier zeige, lässt sich in folgende Schritte unterteilen:
@@ -116,15 +112,12 @@ Der Konstruktor ist protected. Ich habe das in diesem Fall so gewählt, da ich m
 Dieser Teil hat eigentlich noch nichts mit Kryptografie zu tun. Es geht nur um das einfache Einlesen der Daten aus dem Lizenzstring, um diese dann an den Konstruktor der License-Klasse zu übergeben.
 Der Parse-Teil sieht bei mir so aus:
 
-// RegEx-Patterns für Anfang und Ende des Lizenzstrings
-private const string LicensePrefix = "^((-+?)BEGIN LICENSE(-+?))";
-private const string LicenseSuffix = "((-+?)END LICENSE(-+?)\\s?)$";
-
 public static License Parse(string licenseData)
 {
-    const string pattern = LicensePrefix + "(?<data>.+?)" + LicenseSuffix; // Pattern, um an die Daten zwischen BEGIN und END zu kommen
+    // Pattern, um an die Daten zwischen BEGIN und END zu kommen
+    const string pattern = "^\\s*-+BEGIN LICENSE-+(?<data>(\\s|.)*?)-+END LICENSE-+\\s*$";
 
-    var match = Regex.Match(licenseData, pattern); // string auf Muster prüfen
+    var match = Regex.Match(licenseData, pattern, RegexOptions.IgnoreCase); // string auf Muster prüfen
     if (!match.Success) // Wenn das Muster nicht gematched wurde, ist der Lizenz-String nicht lesbar und somit ungültig.
         throw new FormatException();
 
@@ -136,7 +129,6 @@ public static License Parse(string licenseData)
     var splitData = rawStringData.Split('\n'); // Splitten beim Zeilenumbruch
     if (splitData.Length < 3) // Wenn es weniger als 3 Zeilen (Name, Typ, Signatur) waren -> ungültig
         throw new FormatException();
-
 
     // Ab hier findet auch Schirtt 1.1 statt:
     // 1.1. Auftrennung der Lizenz in einzelne Datenparameter (Name, Typ, Signatur)
@@ -150,8 +142,8 @@ public static License Parse(string licenseData)
         && type != LicenseType.Commercial
         && type != LicenseType.OpenSource)
     {
-    	// Enums könenn auch Werte annehmen, die nicht im Enum definiert sind, z. B. durch einen Cast.
-    	// Falls dies bei LicenseType der Fall ist -> ungültig
+        // Enums könenn auch Werte annehmen, die nicht im Enum definiert sind, z. B. durch einen Cast.
+        // Falls dies bei LicenseType der Fall ist -> ungültig
         throw new FormatException();
     }
 
@@ -178,10 +170,24 @@ Hierfür habe ich folgende Funktion angelegt:
 private static string GeneralizeDataString(string someString)
 {
     return someString.StripWhiteSpace().ToUpperInvariant();
+}
 
-	// StripWhiteSpace() kommt aus der NTH-Library.
-	// Die Methode ist wie folgt definiert:
-	// https://github.com/nikeee/nth/blob/7813f6b80e54afc539601c4c74edfe880f5bbd26/src/NTH/NTH/Text/StringExtensions.cs#L37
+Die StripWhiteSpace-Funktion ist als String-Extension wie folgt definiert:
+
+internal static class StringExtensions
+{
+    public static string StripWhiteSpace(this string value)
+    {
+        if (value == null)
+            return null;
+        if (value.Length == 0 || value.Trim().Length == 0)
+            return string.Empty;
+        var sb = new StringBuilder(value.Length);
+        for (int i = 0; i < value.Length; ++i)
+            if (!char.IsWhiteSpace(value[i]))
+                sb.Append(value[i]);
+        return sb.ToString();
+    }
 }
 
 Diese funktion entfernt sämtlichen Whitespace aus dem String und konvertiert anschließend alle Buchstaben in Großbuchstaben.
