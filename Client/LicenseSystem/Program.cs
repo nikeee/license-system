@@ -7,7 +7,8 @@ namespace LicenseSystem
         static void Main(string[] args)
         {
             // Kann via TextBox genommen oder von irgendwo geladen werden.
-            var someLicenseString = @"--------BEGIN LICENSE--------
+            var someLicenseString =
+@"--------BEGIN LICENSE--------
 Erika Mustermann
 3
 44F416FCD6C253F3DEC75938E8F4B
@@ -45,17 +46,19 @@ D020CD451752F3B248CEFB2AD1024
                         Console.WriteLine("Vielen Dank für das Verwenden einer Single-User-License.");
                         break;
                     case LicenseType.Commercial:
-                        Console.WriteLine("Sie haben Zugriff auf ein SuperEnterpriseFeature-3000.");
+                        Console.WriteLine("Sie haben Zugriff auf ein SuperEnterpriseFeature9001.");
                         break;
                     case LicenseType.OpenSource:
                         Console.WriteLine("Du bist der Beste!");
                         break;
                 }
-
             }
             else
             {
                 Console.WriteLine("Ungültige Lizenz!");
+                for (int i = 0; i < 42; ++i)
+                    Console.Write("Kauf");
+                Console.WriteLine("!");
             }
 
 
