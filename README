@@ -1,0 +1,302 @@
+
+Voraussetzungen:
+Um die Schritte in diesem Beitrag nachvollziehen zu können, solltest du grundlegende Kenntnisse zu Public-Private-Key-Kryptografie haben. Hier geht es speziell um das Signieren von Daten.
+Außerdem solltest du die grundlegenden Konzepte von C# (bzw. .NET) beherrschen.
+
+Verbesser mich!
+De ganze Beitrag inklusive Quelltext befindet sich auf GitHub und kann dort von jedem verbessert werden:
+<link>
+
+Was ist das Ziel?
+Ziel ist es, einen Namen und zusätzlcihe, beliebige Daten mit einer Signatur zu versehen, sodass auf dieser Grundlage ein Lizanzsystem implementiert werden kann.
+
+Bemerkungen
+
+Wenn ich in diesem Beitrag "Lizenz" erwähne, meine ich folgendes:
+Ein String, der den Namen des Lizenznehmers, weitere Lizenzdaten (z.B. Lizenztyp) und die kodierte digitage Signatur enthält.
+
+Um den Code übersichtlich zu halten werde ich in den Codebeispielen meine NTH-Library verwenden. An den Stellen, an denen ich sie verwende werde ich dies mit einem Kommentar kennzeichnen und ggf. Alternativen angeben. Falls Du den Code so übernehmen möchtest, ist die NTH-Library erforderlich. Diese kannst du via NuGet in dein Projekt installieren:
+Install-Package NTH
+
+
+Okay, dann mal los!
+
+Die Vorgehensweise bei der Methode, wie ich sie hier zeige, lässt sich in folgende Schritte unterteilen:
+1. Einlesen der Lizenz
+1.1. Auftrennung der Lizenz in einzelne Datenparameter (Name, Typ, Signatur)
+2. Standardisierung der übergebenen Daten in einheitliches Format
+3. Validierung der Daten mittels überprüfung der RSA-Signatur
+
+Aufbau der Lizenz
+Eine Lizenz ist wie folgt aufgebaut:
+----------BEGIN LICENSE----------
+<Vorname> <Nachname>
+<Lizenztyp>
+<Signatur>
+-----------END LICENSE-----------
+
+Wie Du das letztendlich aufbaust, ist Dir überlassen. Man könnte hierbei auch mit XML oder JSON arbeiten, um die Verarbeitung etwas zu vereinfachen.
+
+Eine Lizenz sieht dann z. B. so aus:
+
+----------BEGIN LICENSE----------
+Erika Mustermann
+2
+DEADBEEFCAFEBABEC001D00DEBEEFEA7E5
+DEADBEEFCAFEBABEC001D00DEBEEFEA7E5
+DEADBEEFCAFEBABEC001D00DEBEEFEA7E5
+DEADBEEFCAFEBABEC001D00DEBEEFEA7E5
+DEADBEEFCAFEBABEC001D00DEBEEFEA7E5
+-----------END LICENSE-----------
+
+(Die Signaturdaten sind nicht gültig)
+
+0. Die Lizenz-Klasse
+Um den Lizenzkram besser vom restlichen Code der Anwendung zu trennen, legen wir eine Klasse für eine Lizenz an. Diese sieht bei mir jetzt so aus:
+
+class License
+{
+    private const string _publicKey = ""; // TODO
+
+    private readonly bool _isValid;
+    public bool IsValid { get { return _isValid; } }
+
+    private readonly string _licensee;
+    public string Licensee { get { return _licensee; } }
+
+    private readonly LicenseType _type;
+    public LicenseType Type { get { return _type; } }
+
+    protected License(string licensee, LicenseType type, byte[] verificationData)
+    {
+        if (string.IsNullOrEmpty(licensee))
+            throw new ArgumentNullException("licensee");
+        if (verificationData == null)
+            throw new ArgumentNullException("verificationData");
+
+        _licensee = licensee;
+        _type = type;
+        _isValid = ValidateLicense(verificationData);
+    }
+
+    private bool ValidateLicense(byte[] signature) { /* TODO */ }
+
+    public static License Parse(string licenseData) { /* TODO */ }
+
+    private static string GeneralizeDataString(string someString) { /* TODO */ }
+}
+
+Außerdem habe ich noch 3 verschiedene Lizenztypen gewählt, um zu zeigen, dass man noch weitere Daten in die Lizenz packen kann:
+enum LicenseType
+{
+    SingleUser = 1,
+    Commercial,
+    OpenSource
+}
+
+Die Stellen, die mit "TODO" gekennzeichnet sind, werden wir in den nächsten Schritten behandeln.
+
+0.5 Verwendung der Lizenz-Klasse
+Die Lizenzklasse kann am Ende so verwendet werden:
+
+var license = License.Parse("----BEGIN LICENSE-----...");
+if(license.IsValid)
+{
+	Console.WriteLine("Gültige Lizenz!");
+	Console.WriteLine("Lizenztyp: " + license.Type);
+}
+else
+{
+	Console.WriteLine("Ungültige Lizenz!");
+}
+
+Der Konstruktor ist protected. Ich habe das in diesem Fall so gewählt, da ich möchte, dass man eine Instanz von License nur mit der Parse-Methode erstellen kann. Natürlich könnte man den Konstruktor auch öffentlich machen.
+
+1. Einlesen der Lizenz
+Dieser Teil hat eigentlich noch nichts mit Kryptografie zu tun. Es geht nur um das einfache Einlesen der Daten aus dem Lizenzstring, um diese dann an den Konstruktor der License-Klasse zu übergeben.
+Der Parse-Teil sieht bei mir so aus:
+
+// RegEx-Patterns für Anfang und Ende des Lizenzstrings
+private const string LicensePrefix = "^((-+?)BEGIN LICENSE(-+?))";
+private const string LicenseSuffix = "((-+?)END LICENSE(-+?)\\s?)$";
+
+public static License Parse(string licenseData)
+{
+    const string pattern = LicensePrefix + "(?<data>.+?)" + LicenseSuffix; // Pattern, um an die Daten zwischen BEGIN und END zu kommen
+
+    var match = Regex.Match(licenseData, pattern); // string auf Muster prüfen
+    if (!match.Success) // Wenn das Muster nicht gematched wurde, ist der Lizenz-String nicht lesbar und somit ungültig.
+        throw new FormatException();
+
+    var rawStringData = match.Groups["data"].Value;
+    if (string.IsNullOrWhiteSpace(rawStringData)) // Wenn die Daten zwischen BEGIN und END leer bzw nur WhiteSpace sind -> ungültig
+        throw new FormatException();
+    rawStringData = rawStringData.Trim(); // sonstiges whitespace trimmen (links udn rechts)
+
+    var splitData = rawStringData.Split('\n'); // Splitten beim Zeilenumbruch
+    if (splitData.Length < 3) // Wenn es weniger als 3 Zeilen (Name, Typ, Signatur) waren -> ungültig
+        throw new FormatException();
+
+
+    // Ab hier findet auch Schirtt 1.1 statt:
+    // 1.1. Auftrennung der Lizenz in einzelne Datenparameter (Name, Typ, Signatur)
+
+    var licenseeRaw = splitData[0].Trim(); // Name des Lizenznehmers in 1. Zeile
+    var licenseTypeRaw = splitData[1].Trim(); // Integer-Wert des Enum-Members von LicenseType in 2. Zeile
+
+    var type = (LicenseType)int.Parse(licenseTypeRaw); // Integer-Wert in LicenseType umwandeln
+
+    if (type != LicenseType.SingleUser
+        && type != LicenseType.Commercial
+        && type != LicenseType.OpenSource)
+    {
+    	// Enums könenn auch Werte annehmen, die nicht im Enum definiert sind, z. B. durch einen Cast.
+    	// Falls dies bei LicenseType der Fall ist -> ungültig
+        throw new FormatException();
+    }
+
+    // Die Signatur besteht aus allen verbleibenden Zeilen
+    var verificationDataRaw = string.Join(string.Empty, splitData.Skip(2)).Trim();
+
+    // Dekodierung des Strings zu Binärdaten (byte[]).
+    var verificationData = Convert.FromBase64String(verificationDataRaw);
+
+    // Bis hier hin konnte alles erfolgreich eingelesen werden
+    // Ob die Daten aber gültig (== Signatur ist korrekt) sind, wird später überprüft.
+
+    return new License(licenseeRaw, type, verificationData); // Rückgabe des Lizenz-Objektes mit den eingelesenen Daten
+}
+
+Wie gesagt. Ich verwende hier ein Format, das ich von Subliem Text abgeschaut habe. Du kannst dir auch ein eigenes ausdenken, das auf z. B. XML oder JSON basiert, um dir das Auslesen zu vereinfachen.
+
+
+2. Standardisierung der übergebenen Daten in einheitliches Format
+
+Da wir nicht sicher ein können, dass unser Benutzer seinen Namen leicht abgeändert hat, müssen wir das Gane in ein Standard-Format bringen. Dies ist sinnvoll, da z. B. "Erika Mustermann" und "erika Mustermann" den gleichen Namen bezeichnen, aber ansich unterschiedliche Strings sind.
+Hierfür habe ich folgende Funktion angelegt:
+
+private static string GeneralizeDataString(string someString)
+{
+    return someString.StripWhiteSpace().ToUpperInvariant();
+
+	// StripWhiteSpace() kommt aus der NTH-Library.
+	// Die Methode ist wie folgt definiert:
+	// https://github.com/nikeee/nth/blob/7813f6b80e54afc539601c4c74edfe880f5bbd26/src/NTH/NTH/Text/StringExtensions.cs#L37
+}
+
+Diese funktion entfernt sämtlichen Whitespace aus dem String und konvertiert anschließend alle Buchstaben in Großbuchstaben.
+So wird:
+"Erika Mustermann" zu "ErikaMustermann" zu "ERIKAMUSTERMANN"
+...und dementsprechend
+"erika Mustermann" zu "erikaMustermann" zu "ERIKAMUSTERMANN"
+Auch "eRikA musStermAnN" wird zu "ERIKAMUSTERMANN".
+Dadurch erreichen wir, dass die Lizenz weniger anfällig für Änderungen ist, die ein unerfahrener Benutzer eventuell vornehmen könnte (Änderung des String-Casings).
+
+Dieser Schritt ist für alle Daten nötig, die für soetwas anfällig wären. In diesem Beispiel sind das aber keine weiteren.
+
+3. Validierung der Daten mittels überprüfung der RSA-Signatur
+Nun kommt der eigentlich kryptografische Teil und auch die letzte Funktion der License-Klasse.
+
+private bool ValidateLicense(byte[] signature)
+{
+	// Um die Lizenz auf Gültigkeit zu prüfen müssen alle zu prüfenden Parameter (Name, Typ) in einen Buffer gepackt werden
+	// Dies kann man wie folgt umsetzen:
+
+	// Standardisierung des Namens des Lizenznehmers
+    var licenseeGen = GeneralizeDataString(this._licensee); // "ERIKAMUSTERMANN"
+
+    // Zusammenfüren des Namens "ERIKAMUSTERMANN" mit dem Int-Wert des Lizenztyps (z. B. 2 für "Commercial").
+    var dataStr = licenseeGen + (int)this._type; //ERIKAMUSTERMANN2
+
+    // Erstellen eines Byte-Arrays aus dem zusammengefügten String
+    var dataBuffer = System.Text.Encoding.UTF8.GetBytes(dataStr);
+
+    // Crypto-Provider erstellen
+    using (var provider = new RSACryptoServiceProvider())
+    {
+    	// Den Public Key festlegen
+        provider.ImportPublicKeyPem(_publicKey);
+
+        // Daten mit VerifyData überprüfen
+        // Übergeben wird hier der Datenpuffer, das Hashing-Verfahren für die Signatur und Signatur selbst
+        // In diesem Fall verwende ich SHA1
+        return provider.VerifyData(dataBuffer, CryptoConfig.MapNameToOID("SHA1"), signature);
+        // Wenn die Daten gültig sind, sind die Lizenzdaten ebenfalls gültig. Wenn nicht, dann nicht.
+    }
+}
+
+Das war's schon fast! Wir benötigen nun noch ein Schlüsselpaar. Dieses kann man z. B. mit OpenSSL erzeugen. Ich nehme hier jetzt mal ein Beispiel-Schlüsselpaar, welches Du nicht improduktiven Einsatz verwenden solltest!(!)
+
+Mein Private Key in dem Fall:
+-----BEGIN RSA PRIVATE KEY-----
+MIICXgIBAAKBgQDwIqfvxEjqHu8048x4wJ5EId6ASAbWdH5fzgHxvew5kXqECMNc
+XzRqDVnDVPQT41UeZs8HxouBE+ZA8DfnVlHwP4EIeigOUaqy0sseKpO71tupFU+2
+LjpcF6O7cVuLjt6476iYfSyrssK4hnmzVYGZNz16OSR9z/SuTd8BhohG4QIDAQAB
+AoGBAOmEmhEUrN9XU8D4IVfv4DhbQ1c2M8gKovYhjEx8J6LX8O9C4lAKmRrkfrzv
++Sb59EVLLtrd3b2ZD1lpAMQrciMwC5PAa8da/J++lR1VjM5GbzqKjGtfx3WQlzNE
+1ZaZ2FSY8lAPMM4uLczyD79PJQBsGCcx3KDJRR5ENp6an5cRAkEA/m1FEqol/KKh
+xOyGsK4GVuansBXhrAgpwMlYLT+vF0gy1jzYQDNNQXzeQFYH6gZY66RTYFl3JPNL
+8KXLyhwDLQJBAPGew6xkLBoYi4IO9I+NP/gIHzSiQeEl2OxZsgZiz0Yh5E9ndwMr
+87jTX/4ZBwNlDC0E+MXsJpMSvTFNpw4rcwUCQQC5FU5JLKOjq79YnOPChWYxM2vL
+Ka/YULvm9dGCYTCDFE9/EBYUZf2OZULctHjfYqyvBwRsM8j7hU26CzI7nbMlAkAA
+kVjwXMPlw80AHzzf4XsXAB3ip8bz2nzqAUPz0+OczJOWxC15am8GLij5leF4VpJy
+wKI9BNMKYW7kYMRVujBpAkEA7gQ8MGqjjrCAfOzrrC9ZuVdGRfEjUEdHMqiF+js7
+XNBvnT5lBznUOd+eta6CGo7S5hjU7D3CEzmVGQfxUsRZ1w==
+-----END RSA PRIVATE KEY-----
+
+Der dazugehörige Public Key:
+-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDwIqfvxEjqHu8048x4wJ5EId6A
+SAbWdH5fzgHxvew5kXqECMNcXzRqDVnDVPQT41UeZs8HxouBE+ZA8DfnVlHwP4EI
+eigOUaqy0sseKpO71tupFU+2LjpcF6O7cVuLjt6476iYfSyrssK4hnmzVYGZNz16
+OSR9z/SuTd8BhohG4QIDAQAB
+-----END PUBLIC KEY-----
+
+Ich habe beide Schlüssel jetzt im PEM-Format. Wenn Du andere Formate bevorzugst, kannst Du diese auch verwenden. Ich nehme jetzt dieses, da dieses Format sehr portabel ist.
+
+Der Private Key wird zum erstellen einer Lizenzdatei verwendet. Dieser darf niemals preisgegeben werden. Sobald jemand im Besitz dieses Schlüssels ist, kann derjenige sich so viele Lizenzen erstellen, wie er will!(!). Der Private Key darf acuh keinesfalls irgendwo im Quelltext der Anwendung stehen, die an die Benutzer rausgeht!
+
+...weiter im Text.
+
+Den Public Key fügen wir einfach oben als String-Wert der Konstante ein.
+
+private const string _publicKey = @"-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDwIqfvxEjqHu8048x4wJ5EId6A
+SAbWdH5fzgHxvew5kXqECMNcXzRqDVnDVPQT41UeZs8HxouBE+ZA8DfnVlHwP4EI
+eigOUaqy0sseKpO71tupFU+2LjpcF6O7cVuLjt6476iYfSyrssK4hnmzVYGZNz16
+OSR9z/SuTd8BhohG4QIDAQAB
+-----END PUBLIC KEY-----";
+
+Soweit sind wir fertig! Der Client kann nun eine Lizenz parsen, sie in eine Klasse stecken und mittels RSA-Signatur validieren.
+
+Lizenzen ausstellen
+
+Um Lizenzen auszustellen benötigen wir den Private Key. Bitte achte darauf, dass _niemand_ außer dir Zugriff auf diesen Schlüssel haben darf.
+
+Um dies zu tun bietet sich ein Server an.
+
+Mit PHP und der PHPSecLib würde es wie folgt gehen:
+
+// TODO
+
+
+Vorteile und Nachteile dieser Methode.
+
+Vorteile:
+- Keine Internetverbindung zum Validieren der Lizenz notwendig
+- Key-Generatoren sind so gut wie unmöglich, solange der Schlüssel lang genug gewählt wurde und der Private key privat bleibt
+- Geringe Fehleranfälligkeit, da man nicht auf Firewall-Umgebungen, die UAC oder ähnliches Rücksicht nehmen muss.
+
+Nachteile
+- Sehr einfach zu Cracken
+
+/*
+"Einfach zu Cracken" vs "Keygens unmöglich":
+Das hört sich im ersten Moment recht widersprüchlich an, aber so ist es. Jemand könnte die Anwendung leicht cracken, indem an der entsprechenden Stelle einfach ein "return true;" eingefügt wird. Um dies zu tun, muss derjenige allerdings die Anwendung bearbeiten. Das hat den "Nachteil", dass wenn eine Update der Anwendung erscheint, dies erneut machen muss. Das bringt einen zusätzlichen Aufwand mit sich.
+
+Meine Meinung zu dem Thema:
+Ich finde, man sollte sein Programm nich tmit irgendwelchem "unknackbaren" Lizenzkram verwurschteln, was es am Ende nur fehleranfälliger und unbenutzbarer macht.
+Generell sollte man IMO die Zeit lieber in die Funktionalität des Programms statt in ein komplexes Lizenzsystem stecken.
+Das hier gezeigte System ähnelt stark dem, welches u. A. bei Sublime Text zum Einsatz kommt.
+
+*/
