@@ -1,6 +1,7 @@
 <?php
 
-include('Crypt/RSA.php');
+require_once 'Crypt/RSA.php';
+require_once 'LicenseType.php';
 
 class LicenseCreator
 {
@@ -24,7 +25,7 @@ XNBvnT5lBznUOd+eta6CGo7S5hjU7D3CEzmVGQfxUsRZ1w==
 	{
 		// Gleiche Generalisierung wie am Client:
 		$licenseeGen = self::GeneralizeDataString($licensee);
-		$dataStr = $licenseeGen + (int)$type;
+		$dataStr = $licenseeGen + (int)$type; // ERIKAMUSTERMANN2
 
 		// Setzen der RSA-Optionen auf die, die auch am Client verwendet werden:
 		$rsa = new Crypt_RSA();
@@ -60,14 +61,3 @@ XNBvnT5lBznUOd+eta6CGo7S5hjU7D3CEzmVGQfxUsRZ1w==
 		return preg_replace('/\s+/', '', $someString);
 	}
 }
-
-// Abbildung des Enums, das wir auch in der Client-Anwendung haben
-class LicenseType
-{
-	const Personal = 1;
-	const Commercial = 2;
-	const OpenSource = 3;
-}
-
-$license = LicenseCreator::CreateLicense('Erika Mustermann', LicenseType::Commercial);
-echo $license;
