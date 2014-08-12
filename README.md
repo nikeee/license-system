@@ -1,24 +1,19 @@
 
 ## Voraussetzungen
-Um die Schritte in diesem Beitrag nachvollziehen zu können, solltest du grundlegende Kenntnisse zu Public-Private-Key-Kryptografie haben. Hier geht es speziell um das Signieren von Daten.
-Außerdem solltest du die grundlegenden Konzepte von C# (bzw. .NET) beherrschen. Ich zeige es hier mit PHP als Server-Backend, weshalb es auch nicht übel wäre, wenn du PHP-Code zumindest lesen könntest.
+Um die Schritte in diesem Beitrag nachvollziehen zu können, solltest Du grundlegende Kenntnisse zu Public-Private-Key-Kryptografie haben. Hier geht es speziell um das Signieren von Daten.
+Außerdem solltest Du die grundlegenden Konzepte von C# (bzw. .NET) beherrschen. Ich zeige es hier mit PHP als Server-Backend, weshalb es auch nicht übel wäre, wenn Du PHP-Code zumindest lesen könntest.
 
 ## Verbesser mich!
-De ganze Beitrag inklusive Quelltext befindet sich auf GitHub und kann dort von jedem verbessert werden:
+De ganze Beitrag inklusive Quelltext befindet sich auf GitHub und kann dort von Jedem verbessert werden:
 <link>
-Falls dir etwas auffällt oder du ein anderes Anliegen hast, kannst du mir gerne eine Issue hinterlassen oder mich kontaktieren.
+Falls Dir etwas auffällt oder du ein anderes Anliegen hast, kannst Du mir gerne eine Issue hinterlassen oder mich kontaktieren.
 
 ## Was ist das Ziel?
-Ziel ist es, einen Namen und zusätzliche, beliebige Daten mit einer Signatur zu versehen, sodass auf dieser Grundlage ein Lizanzsystem implementiert werden kann.
-
-### Bemerkungen
-
-Wenn ich in diesem Beitrag "Lizenz" erwähne, meine ich folgendes:
-Ein String, der den Namen des Lizenznehmers, weitere Lizenzdaten (z.B. Lizenztyp) und die kodierte digitage Signatur enthält.
+Ziel ist es, einen Namen und zusätzliche, beliebige Daten mit einer Signatur zu versehen, sodass auf dieser Grundlage ein Lizenzsystem implementiert werden kann. Bei diesem Lizenzsystem gibt es einen Client und einen Server. Die Aufgabe des Servers ist es, Lizenzschlüssel auszustellen, die am Client mittels RSA-Signatur validiert werden können. So kann der Client die Lizenz auf Gültigkeit prüfen, ohne den Server zu kontaktieren.
 
 ## Okay, dann mal los!
-
 Die Vorgehensweise bei der Methode, wie ich sie hier zeige, lässt sich in folgende Schritte unterteilen:
+
 1. Einlesen der Lizenz
 1.1. Auftrennung der Lizenz in einzelne Datenparameter (Name, Typ, Signatur)
 2. Standardisierung der übergebenen Daten in einheitliches Format
@@ -34,7 +29,12 @@ Eine Lizenz ist wie folgt aufgebaut:
 -----------END LICENSE-----------
 ```
 
-Wie Du das letztendlich aufbaust, ist Dir überlassen. Man könnte hierbei auch mit XML oder JSON arbeiten, um die Verarbeitung etwas zu vereinfachen.
+- `<Vorname> <Nachname>`: stehen für den Lizenznehmer. Das kann auch eine E-Mail-Adresse oder irgendein beliebiger String sein. Ich verwende hier Vor- und Nachname.
+- `<Lizenztyp>`: Um noch zu zeigen, dass man im Prinzip alles in so eine Lizenz stecken kann, habe ich dieses Feld hinzugefügt. Es steht für die Art, um die es sich bei der Lizenz handelt. Z. B. `"Free"`, `"Trial"` oder `"Pro"`. Ich habe hier `SingleUser`, `Commercial` und `OpenSource` verwendet.
+- `<Signatur>`: Im Prinzip würde es ausreichen, die ersten beiden Parameter zu lesen und zu wissen, um was für eine Lizenz es sich bei was für einem Lizenznehmer handelt. Leider ist sie dann nicht geschützt vor Manipulation. Aus diesem Grund benötigt man etwas, um die anderen Daten der Lizenz zu validieren. Hierfür wird diese RSA-SHA1-Signatur verwendet. Du musst natürlich nicht RSA nehmen.
+
+Lass' Deiner Kreativität oder deinen Ansprüchen freien Lauf! Es wäre z. B. noch möglich, ein Ablaufdatum oder eine E-Mail-Adresse zu hinzuzufügen. Der Einfachheit halber habe ich mich aber auf 2 Eigenschaften beschränkt.
+Wie Du die Lizenzdaten letztendlich aufbaust, ist Dir überlassen. Man könnte hierbei auch mit XML oder JSON arbeiten, um die Verarbeitung etwas zu vereinfachen.
 
 Eine Lizenz sieht dann z. B. so aus:
 ```
