@@ -463,3 +463,18 @@ Ich finde, man sollte sein Programm nicht mit irgendwelchem "unknackbaren" Lizen
 Generell sollte man IMO die Zeit lieber in die Funktionalität des Programms statt in ein komplexes Lizenzsystem stecken.
 Das hier gezeigte System ähnelt stark dem, welches u. A. bei Sublime Text zum Einsatz kommt.
 Ich finde diese Herangehensweise noch gut vertretbar, da sie recht simpel gehalten ist und trotzdem noch eine gute Hürde bietet.
+Dieser Beitrag soll nicht bedeuten, dass man in allen programmen so ein System anbieten soll. Nein, ganz und gar nicht. Ich bin ein freund von freier und offener Software und will lediglich zeigen, wie man diese Problemstellung angehen kann.
+Außerdem habe ich auf meiner Arbeit oft mich schlecht programmierter Software zu tun, die häufig wegen ignorant implementiertem Lizenzkram die Funktion verweigert.
+
+#### Disclaimer
+Das Übliche:
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
