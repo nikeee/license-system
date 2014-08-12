@@ -43,7 +43,7 @@ XNBvnT5lBznUOd+eta6CGo7S5hjU7D3CEzmVGQfxUsRZ1w==
 		$l = "--------BEGIN LICENSE--------\n";
 		$l .= $licensee . "\n";
 		$l .= (int)$type . "\n";
-		$l .= $signature . "\n";
+		$l .= base64_encode($signature) . "\n";
 		$l .= "---------END LICENSE---------";
 
 		return $l;
