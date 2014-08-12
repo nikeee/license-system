@@ -177,6 +177,8 @@ private static byte[] DecodeDataFromString(string value)
     if (string.IsNullOrWhiteSpace(value))
         return new byte[0];
 
+    value = value.ToUpperInvariant();
+
     byte[] ab = new byte[value.Length >> 1];
     for (int i = 0; i < value.Length; i++)
     {
