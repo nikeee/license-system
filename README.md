@@ -126,7 +126,7 @@ else
 }
 ```
 
-Der Konstruktor ist protected. Ich habe das in diesem Fall so gewählt, da ich möchte, dass man eine Instanz von License nur mit der Parse-Methode erstellen kann. Natürlich könnte man den Konstruktor auch öffentlich machen.
+Der Konstruktor ist `protected`. Ich habe das in diesem Fall so gewählt, da ich möchte, dass man eine Instanz von License nur mit der Parse-Methode erstellen kann. Natürlich könnte man den Konstruktor auch `public` machen.
 
 ### 1. Einlesen der Lizenz
 Dieser Teil hat eigentlich noch nichts mit Kryptografie zu tun. Es geht nur um das einfache Einlesen der Daten aus dem Lizenzstring, um diese dann an den Konstruktor der License-Klasse zu übergeben.
