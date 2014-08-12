@@ -5,7 +5,7 @@ require_once 'LicenseType.php';
 
 class LicenseCreator
 {
-	private const privateKeyPem = '-----BEGIN RSA PRIVATE KEY-----
+	const privateKeyPem = '-----BEGIN RSA PRIVATE KEY-----
 MIICXgIBAAKBgQDwIqfvxEjqHu8048x4wJ5EId6ASAbWdH5fzgHxvew5kXqECMNc
 XzRqDVnDVPQT41UeZs8HxouBE+ZA8DfnVlHwP4EIeigOUaqy0sseKpO71tupFU+2
 LjpcF6O7cVuLjt6476iYfSyrssK4hnmzVYGZNz16OSR9z/SuTd8BhohG4QIDAQAB
@@ -41,7 +41,7 @@ XNBvnT5lBznUOd+eta6CGo7S5hjU7D3CEzmVGQfxUsRZ1w==
 	private static function FormatLicense($licensee, $type, $signature)
 	{
 		$l = "--------BEGIN LICENSE--------\n";
-		$l .= $name . "\n";
+		$l .= $licensee . "\n";
 		$l .= (int)$type . "\n";
 		$l .= $signature . "\n";
 		$l .= "---------END LICENSE---------";
