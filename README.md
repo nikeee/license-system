@@ -45,7 +45,7 @@ Eine Lizenz ist wie folgt aufgebaut:
 - `<Lizenztyp>`: Um noch zu zeigen, dass man im Prinzip alles in so eine Lizenz stecken kann, habe ich dieses Feld hinzugefügt. Es steht für die Art, um die es sich bei der Lizenz handelt. Z. B. `"Free"`, `"Trial"` oder `"Pro"`. Ich habe hier `SingleUser`, `Commercial` und `OpenSource` verwendet.
 - `<Signatur>`: Im Prinzip würde es ausreichen, die ersten beiden Parameter zu lesen und zu wissen, um was für eine Lizenz es sich bei was für einem Lizenznehmer handelt. Leider ist sie dann nicht geschützt vor Manipulation. Aus diesem Grund benötigt man etwas, um die anderen Daten der Lizenz zu validieren. Hierfür wird diese RSA-SHA1-Signatur verwendet. Du musst natürlich nicht RSA nehmen.
 
-Lass' Deiner Kreativität oder deinen Ansprüchen freien Lauf! Es wäre z. B. noch möglich, ein Ablaufdatum oder eine E-Mail-Adresse zu hinzuzufügen. Der Einfachheit halber habe ich mich aber auf 2 Eigenschaften beschränkt.
+Lass' Deiner Kreativität oder Ansprüchen freien Lauf! Es wäre z. B. noch möglich, ein Ablaufdatum oder eine E-Mail-Adresse hinzuzufügen. Der Einfachheit halber habe ich mich aber auf 2 Eigenschaften beschränkt.
 Wie Du die Lizenzdaten letztendlich aufbaust, ist Dir überlassen. Man könnte hierbei auch mit XML oder JSON arbeiten, um die Verarbeitung etwas zu vereinfachen.
 
 Eine Lizenz sieht dann z. B. so aus:
