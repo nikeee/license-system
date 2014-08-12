@@ -151,12 +151,40 @@ public static License Parse(string licenseData)
     var verificationDataRaw = string.Join(string.Empty, splitData.Skip(2)).Trim();
 
     // Dekodierung des Strings zu Binärdaten (byte[]).
-    var verificationData = Convert.FromBase64String(verificationDataRaw);
+    var verificationData = DecodeDataFromString(verificationDataRaw);
 
     // Bis hier hin konnte alles erfolgreich eingelesen werden
     // Ob die Daten aber gültig (== Signatur ist korrekt) sind, wird später überprüft.
 
     return new License(licenseeRaw, type, verificationData); // Rückgabe des Lizenz-Objektes mit den eingelesenen Daten
+}
+
+
+// Zum Dekodieren der Signaturdaten wird diese Funkton verwendet.
+// Wir könnten auch base64 verwenden, dabei hat man jedoch wieder Groß- und Kleinschreibung, was doof ist, sollte sich jemand die Mühe machen, alles in kleinbuchstaben abzutippen.
+// Wenn man das durch Convert.FromBase64String() ersetzt, muss man auf der Server-Seite evenfalls die funktion ersetzen.
+private static byte[] DecodeDataFromString(string value)
+{
+    // Hexadezimaen String zurück in Byte-Daten umwandeln
+    // macht das gleiche wie PHPs hex2bin; kehrt das bin2hex um.
+
+    if (value == null)
+        return new byte[0];
+
+    if ((value.Length & 1) != 0) // Länge der Daten ist nicht durch 2 teilbar -> kein gültiger hexadezimaler string
+        throw new FormatException();
+
+    if (string.IsNullOrWhiteSpace(value))
+        return new byte[0];
+
+    byte[] ab = new byte[value.Length >> 1];
+    for (int i = 0; i < value.Length; i++)
+    {
+        int b = value[i];
+        b = (b - '0') + ((('9' - b) >> 31) & -7);
+        ab[i >> 1] |= (byte)(b << 4 * ((i & 1) ^ 1));
+    }
+    return ab;
 }
 
 Wie gesagt. Ich verwende hier ein Format, das ich von Subliem Text abgeschaut habe. Du kannst dir auch ein eigenes ausdenken, das auf z. B. XML oder JSON basiert, um dir das Auslesen zu vereinfachen.
@@ -236,6 +264,7 @@ Das war's schon fast! Wir benötigen nun noch ein Schlüsselpaar. Dieses kann ma
 
 Mein Private Key in dem Fall:
 <RSAKeyValue><Modulus>8CKn78RI6h7vNOPMeMCeRCHegEgG1nR+X84B8b3sOZF6hAjDXF80ag1Zw1T0E+NVHmbPB8aLgRPmQPA351ZR8D+BCHooDlGqstLLHiqTu9bbqRVPti46XBeju3Fbi47euO+omH0sq7LCuIZ5s1WBmTc9ejkkfc/0rk3fAYaIRuE=</Modulus><Exponent>AQAB</Exponent><P>/m1FEqol/KKhxOyGsK4GVuansBXhrAgpwMlYLT+vF0gy1jzYQDNNQXzeQFYH6gZY66RTYFl3JPNL8KXLyhwDLQ==</P><Q>8Z7DrGQsGhiLgg70j40/+AgfNKJB4SXY7FmyBmLPRiHkT2d3AyvzuNNf/hkHA2UMLQT4xewmkxK9MU2nDitzBQ==</Q><DP>uRVOSSyjo6u/WJzjwoVmMTNryymv2FC75vXRgmEwgxRPfxAWFGX9jmVC3LR432KsrwcEbDPI+4VNugsyO52zJQ==</DP><DQ>AJFY8FzD5cPNAB883+F7FwAd4qfG89p86gFD89PjnMyTlsQteWpvBi4o+ZXheFaScsCiPQTTCmFu5GDEVbowaQ==</DQ><InverseQ>7gQ8MGqjjrCAfOzrrC9ZuVdGRfEjUEdHMqiF+js7XNBvnT5lBznUOd+eta6CGo7S5hjU7D3CEzmVGQfxUsRZ1w==</InverseQ><D>6YSaERSs31dTwPghV+/gOFtDVzYzyAqi9iGMTHwnotfw70LiUAqZGuR+vO/5Jvn0RUsu2t3dvZkPWWkAxCtyIzALk8Brx1r8n76VHVWMzkZvOoqMa1/HdZCXM0TVlpnYVJjyUA8wzi4tzPIPv08lAGwYJzHcoMlFHkQ2npqflxE=</D></RSAKeyValue>
+(Anmerkung: Beim XML-Format ist hier der Public Key mit dabei)
 
 Der dazugehörige Public Key:
 <RSAKeyValue><Modulus>8CKn78RI6h7vNOPMeMCeRCHegEgG1nR+X84B8b3sOZF6hAjDXF80ag1Zw1T0E+NVHmbPB8aLgRPmQPA351ZR8D+BCHooDlGqstLLHiqTu9bbqRVPti46XBeju3Fbi47euO+omH0sq7LCuIZ5s1WBmTc9ejkkfc/0rk3fAYaIRuE=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>
@@ -281,5 +310,6 @@ Meine Meinung zu dem Thema:
 Ich finde, man sollte sein Programm nich tmit irgendwelchem "unknackbaren" Lizenzkram verwurschteln, was es am Ende nur fehleranfälliger und unbenutzbarer macht.
 Generell sollte man IMO die Zeit lieber in die Funktionalität des Programms statt in ein komplexes Lizenzsystem stecken.
 Das hier gezeigte System ähnelt stark dem, welches u. A. bei Sublime Text zum Einsatz kommt.
+Die von mir hier gezeigte Methode ist IMO gut vertretbar und bietet trotzdem eine angemessene Hürde.
 
 */

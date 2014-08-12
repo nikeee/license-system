@@ -15,7 +15,15 @@ namespace LicenseSystem
             var license = License.Parse(@"--------BEGIN LICENSE--------
 Erika Mustermann
 2
-DQ6dYrgBlcnIZ89FHDEoBZO/rugEUL3Uaizq/+1tN4zZQIsyiwWsLI2aeu2Li2nUTb9m6g+BSoADk3rRYZfvTbKP3SfP9YsfwU3zzXkSxBwlc7sKDVmtlL4O/NgE2KgJh18TyscBN/JOMEeK6N/TuUAlo42A1jZjf3JYh4ae134=
+0D0E9D62B80195C9C867CF451C312
+80593BFAEE80450BDD46A2CEAFFED
+6D378CD9408B328B05AC2C8D9A7AE
+D8B8B69D44DBF66EA0F814A800393
+7AD16197EF4DB28FDD27CFF58B1FC
+14DF3CD7912C41C2573BB0A0D59AD
+94BE0EFCD804D8A809875F13CAC70
+137F24E30478AE8DFD3B94025A38D
+80D636637F725887869ED77E
 ---------END LICENSE---------");
 
             if (license.IsValid)
@@ -105,6 +113,9 @@ DQ6dYrgBlcnIZ89FHDEoBZO/rugEUL3Uaizq/+1tN4zZQIsyiwWsLI2aeu2Li2nUTb9m6g+BSoADk3rR
             if (splitData.Length < 3) // Wenn es weniger als 3 Zeilen (Name, Typ, Signatur) waren -> ungültig
                 throw new FormatException();
 
+            // Ab hier findet auch Schirtt 1.1 statt:
+            // 1.1. Auftrennung der Lizenz in einzelne Datenparameter (Name, Typ, Signatur)
+
             var licenseeRaw = splitData[0].Trim(); // Name des Lizenznehmers in 1. Zeile
             var licenseTypeRaw = splitData[1].Trim(); // Integer-Wert des Enum-Members von LicenseType in 2. Zeile
 
@@ -120,15 +131,42 @@ DQ6dYrgBlcnIZ89FHDEoBZO/rugEUL3Uaizq/+1tN4zZQIsyiwWsLI2aeu2Li2nUTb9m6g+BSoADk3rR
             }
 
             // Die Signatur besteht aus allen verbleibenden Zeilen
-            var verificationDataRaw = string.Join(string.Empty, splitData.Skip(2)).Trim();
+            var verificationDataRaw = string.Join(string.Empty, splitData.Skip(2)).StripWhiteSpace();
 
             // Dekodierung des Strings zu Binärdaten (byte[]).
-            var verificationData = Convert.FromBase64String(verificationDataRaw);
+            var verificationData = DecodeDataFromString(verificationDataRaw);
 
             // Bis hier hin konnte alles erfolgreich eingelesen werden
             // Ob die Daten aber gültig (== Signatur ist korrekt) sind, wird später überprüft.
 
             return new License(licenseeRaw, type, verificationData); // Rückgabe des Lizenz-Objektes mit den eingelesenen Daten
+        }
+
+        // Zum Dekodieren der Signaturdaten wird diese Funkton verwendet.
+        // Wir könnten auch base64 verwenden, dabei hat man jedoch wieder Groß- und Kleinschreibung, was doof ist, sollte sich jemand die Mühe machen, alles in kleinbuchstaben abzutippen.
+        // Wenn man das durch Convert.FromBase64String() ersetzt, muss man auf der Server-Seite evenfalls die funktion ersetzen.
+        private static byte[] DecodeDataFromString(string value)
+        {
+            // Hexadezimaen String zurück in Byte-Daten umwandeln
+            // macht das gleiche wie PHPs hex2bin; kehrt das bin2hex um.
+
+            if (value == null)
+                return new byte[0];
+
+            if ((value.Length & 1) != 0) // Länge der Daten ist nicht durch 2 teilbar -> kein gültiger hexadezimaler string
+                throw new FormatException();
+
+            if (string.IsNullOrWhiteSpace(value))
+                return new byte[0];
+
+            byte[] ab = new byte[value.Length >> 1];
+            for (int i = 0; i < value.Length; i++)
+            {
+                int b = value[i];
+                b = (b - '0') + ((('9' - b) >> 31) & -7);
+                ab[i >> 1] |= (byte)(b << 4 * ((i & 1) ^ 1));
+            }
+            return ab;
         }
 
         private static string GeneralizeDataString(string someString)
