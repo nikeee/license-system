@@ -10,7 +10,9 @@ Softwareseitig benötigst Du zum Nachvollziehen des kompletten Beitrags:
 - Visual Studio oder eine andere Möglichkeit, C#-Code zu kompilieren
 - Einen Web-Server mit PHP >= 5.4
 - Einen Editor für PHP-Dateien
-- OpenSSL oder eine andere Möglichkeit, RSA-Schlüsselpaare zu erzeugen (z. B. via .NET und ToXmlString())
+- OpenSSL oder eine andere Möglichkeit, RSA-Schlüsselpaare zu erzeugen (z. B. via .NET und ToXmlString(), siehe unten)
+
+Ich verwende in diesem Beitrag auf der Client-Seite nur .NET-Boardmittel. Wenn Du eine externe Crypto-Library (z. B. BouncyCastle) verwenden möchtest, kannst du das natürlich auch gerne tun.
 
 
 ## Verbesser mich!
@@ -430,6 +432,15 @@ if(license.IsValid)
 #### Was es zu beachten gibt
 - Die Schlüssel sollten lang genug gewühlt werden (mindestens 2048 Bit sollten ausreichen)
 - Niemand anders sollte auf den Private Key Zugriff haben, da das komplette System sonst hinfällig ist.
+
+#### Erstellen von Schlüsseln
+Dafür kansnt Du OpenSSL oder andere Kryptosoftware verwenden. Wichtig ist nur, dass Du die Schlüssel später auch in der Anwendung verwenden kannst. Du kannst aber auch rein bei .NET bleiben. Ich mache es z. B. so:
+```
+const int KeyLength = 2048;
+var rsa = new RSACryptoServiceProvider(KeyLength);
+File.WriteAllText("private_key.xml", rsa.ToXmlString(true));
+File.WriteAllText("public_key.xml", rsa.ToXmlString(false));
+```
 
 #### Vorteile und Nachteile dieser Methode
 ##### Vorteile
