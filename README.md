@@ -465,6 +465,8 @@ Das hier gezeigte System ähnelt stark dem, welches u. A. bei Sublime Text zum E
 Ich finde diese Herangehensweise noch vertretbar, da sie recht simpel gehalten ist und trotzdem noch eine (kleine) Hürde bietet.
 Dieser Beitrag soll nicht bedeuten, dass man in allen Programmen so ein System einbauen soll. Nein, ganz und gar nicht. Ich bin ein freund von freier und offener Software und will lediglich zeigen, wie man diese Problemstellung angehen kann.
 Außerdem habe ich auf meiner Arbeit oft mit schlecht programmierter Software zu tun, die häufig wegen ignorant implementiertem Lizenzkram die Funktion verweigert.
+Beispiel?
+[Hier](https://stackoverflow.com/q/25486319/785210) will Jemand irgendwelchen Lizenzkram mit Festplattenseriennummern hinfriemeln. Aus irgendeinem Grund funktioniert das aber nicht immer, weshalb seine Software wahrscheinlich unrechtmäßig die Funktion verweigern wird. Sowas nervt absolut jeden Sysadmin und Anwender. Lasst sowas bitte.
 
 #### Disclaimer
 Das Übliche:
