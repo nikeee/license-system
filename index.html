@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>License-system by nikeee</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">License-system</h1>
+      <h2 class="project-tagline">Ein Lizenzsystem mit RSA-Signaturen</h2>
+      <a href="https://github.com/nikeee/license-system" class="btn">View on GitHub</a>
+      <a href="https://github.com/nikeee/license-system/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/nikeee/license-system/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h1>
+<a id="lizenzsystem-mit-rsa-signaturen" class="anchor" href="#lizenzsystem-mit-rsa-signaturen" aria-hidden="true"><span class="octicon octicon-link"></span></a>Lizenzsystem mit RSA-Signaturen</h1>
+
+<p>Aufgrund der Nachfrage habe ich mich mal dazu durchgerungen, einen kleinen Beitrag dazu zu verfassen.</p>
+
+<h2>
+<a id="voraussetzungen" class="anchor" href="#voraussetzungen" aria-hidden="true"><span class="octicon octicon-link"></span></a>Voraussetzungen</h2>
+
+<p>Um die Schritte in diesem Beitrag nachvollziehen zu können, solltest Du grundlegende Kenntnisse zu Public-Private-Key-Kryptografie haben. Hier geht es speziell um das Signieren von Daten.
+Außerdem solltest Du die grundlegenden Konzepte von C# (bzw. .NET) beherrschen. Ich zeige es hier mit PHP als Server-Backend, weshalb es auch nicht übel wäre, wenn Du PHP-Code zumindest lesen könntest.</p>
+
+<h4>
+<a id="software" class="anchor" href="#software" aria-hidden="true"><span class="octicon octicon-link"></span></a>Software</h4>
+
+<p>Softwareseitig benötigst Du zum Nachvollziehen des kompletten Beitrags:</p>
+
+<ul>
+<li>Visual Studio oder eine andere Möglichkeit, C#-Code zu kompilieren</li>
+<li>Einen Web-Server mit PHP &gt;= 5.4</li>
+<li>Einen Editor für PHP-Dateien</li>
+<li>OpenSSL oder eine andere Möglichkeit, RSA-Schlüsselpaare zu erzeugen (z. B. via .NET und ToXmlString(), siehe unten)</li>
+</ul>
+
+<p>Ich verwende in diesem Beitrag auf der Client-Seite nur .NET-Boardmittel. Wenn Du eine externe Crypto-Library (z. B. BouncyCastle) verwenden möchtest, kannst du das natürlich auch gerne tun.</p>
+
+<h2>
+<a id="verbesser-mich" class="anchor" href="#verbesser-mich" aria-hidden="true"><span class="octicon octicon-link"></span></a>Verbesser mich!</h2>
+
+<p>Der ganze Beitrag inklusive Quelltext befindet sich auf GitHub und kann dort von Jedem verbessert werden:
+<a href="https://github.com/nikeee/license-system">nikeee/license-system</a>
+Falls Dir etwas auffällt oder du ein anderes Anliegen hast, kannst Du mir gerne eine Issue hinterlassen oder mich kontaktieren.</p>
+
+<h2>
+<a id="was-ist-das-ziel" class="anchor" href="#was-ist-das-ziel" aria-hidden="true"><span class="octicon octicon-link"></span></a>Was ist das Ziel?</h2>
+
+<p>Ziel ist es, einen Namen und zusätzliche, beliebige Daten mit einer Signatur zu versehen, sodass auf dieser Grundlage ein Lizenzsystem implementiert werden kann. Bei diesem Lizenzsystem gibt es einen Client und einen Server. Die Aufgabe des Servers ist es, Lizenzschlüssel auszustellen, die am Client mittels RSA-Signatur validiert werden können. So kann der Client die Lizenz auf Gültigkeit prüfen, ohne den Server zu kontaktieren.</p>
+
+<h2>
+<a id="okay-dann-mal-los" class="anchor" href="#okay-dann-mal-los" aria-hidden="true"><span class="octicon octicon-link"></span></a>Okay, dann mal los!</h2>
+
+<p>Die Vorgehensweise bei der Methode, wie ich sie hier zeige, lässt sich in folgende Schritte unterteilen:</p>
+
+<ol>
+<li>Einlesen der Lizenz
+
+<ol>
+<li>Auftrennung der Lizenz in einzelne Datenparameter (Name, Typ, Signatur)</li>
+</ol>
+</li>
+<li>Standardisierung der übergebenen Daten in einheitliches Format</li>
+<li>Validierung der Daten mittels überprüfung der RSA-Signatur</li>
+</ol>
+
+<h3>
+<a id="aufbau-der-lizenz" class="anchor" href="#aufbau-der-lizenz" aria-hidden="true"><span class="octicon octicon-link"></span></a>Aufbau der Lizenz</h3>
+
+<p>Eine Lizenz ist wie folgt aufgebaut:</p>
+
+<pre><code>----------BEGIN LICENSE----------
+&lt;Vorname&gt; &lt;Nachname&gt;
+&lt;Lizenztyp&gt;
+&lt;Signatur&gt;
+-----------END LICENSE-----------
+</code></pre>
+
+<ul>
+<li>
+<code>&lt;Vorname&gt; &lt;Nachname&gt;</code>: stehen für den Lizenznehmer. Das kann auch eine E-Mail-Adresse oder irgendein beliebiger String sein. Ich verwende hier Vor- und Nachname.</li>
+<li>
+<code>&lt;Lizenztyp&gt;</code>: Um noch zu zeigen, dass man im Prinzip alles in so eine Lizenz stecken kann, habe ich dieses Feld hinzugefügt. Es steht für die Art, um die es sich bei der Lizenz handelt. Z. B. <code>"Free"</code>, <code>"Trial"</code> oder <code>"Pro"</code>. Ich habe hier <code>SingleUser</code>, <code>Commercial</code> und <code>OpenSource</code> verwendet.</li>
+<li>
+<code>&lt;Signatur&gt;</code>: Im Prinzip würde es ausreichen, die ersten beiden Parameter zu lesen und zu wissen, um was für eine Lizenz es sich bei was für einem Lizenznehmer handelt. Leider ist sie dann nicht geschützt vor Manipulation. Aus diesem Grund benötigt man etwas, um die anderen Daten der Lizenz zu validieren. Hierfür wird diese RSA-SHA1-Signatur verwendet. Du musst natürlich nicht RSA nehmen.</li>
+</ul>
+
+<p>Lass' Deiner Kreativität oder Ansprüchen freien Lauf! Es wäre z. B. noch möglich, ein Ablaufdatum oder eine E-Mail-Adresse hinzuzufügen. Der Einfachheit halber habe ich mich aber auf 2 Eigenschaften beschränkt.
+Wie Du die Lizenzdaten letztendlich aufbaust, ist Dir überlassen. Man könnte hierbei auch mit XML oder JSON arbeiten, um die Verarbeitung etwas zu vereinfachen.</p>
+
+<p>Eine Lizenz sieht dann z. B. so aus:</p>
+
+<pre><code>----------BEGIN LICENSE----------
+Erika Mustermann
+2
+DEADBEEFCAFEBABEC001D00DEBEEFEA7E5
+DEADBEEFCAFEBABEC001D00DEBEEFEA7E5
+DEADBEEFCAFEBABEC001D00DEBEEFEA7E5
+DEADBEEFCAFEBABEC001D00DEBEEFEA7E5
+DEADBEEFCAFEBABEC001D00DEBEEFEA7E5
+-----------END LICENSE-----------
+</code></pre>
+
+<p>(Die Signaturdaten sind nicht gültig)</p>
+
+<h3>
+<a id="0-die-lizenz-klasse" class="anchor" href="#0-die-lizenz-klasse" aria-hidden="true"><span class="octicon octicon-link"></span></a>0. Die Lizenz-Klasse</h3>
+
+<p>Um den Lizenzkram besser vom restlichen Code der Anwendung zu trennen, legen wir eine Klasse für eine Lizenz an. Diese sieht bei mir jetzt so aus:</p>
+
+<div class="highlight highlight-C#"><pre><span class="pl-k">class</span> <span class="pl-en">License</span>
+{
+    <span class="pl-k">private</span> <span class="pl-k">const</span> <span class="pl-k">string</span> _publicKey = <span class="pl-s"><span class="pl-pds">"</span><span class="pl-pds">"</span></span>; <span class="pl-c">// TODO</span>
+
+    <span class="pl-k">private</span> <span class="pl-k">readonly</span> <span class="pl-k">bool</span> _isValid;
+    <span class="pl-k">public</span> <span class="pl-k">bool</span> <span class="pl-en">IsValid</span> { <span class="pl-k">get</span> { <span class="pl-k">return</span> _isValid; } }
+
+    <span class="pl-k">private</span> <span class="pl-k">readonly</span> <span class="pl-k">string</span> _licensee;
+    <span class="pl-k">public</span> <span class="pl-k">string</span> <span class="pl-en">Licensee</span> { <span class="pl-k">get</span> { <span class="pl-k">return</span> _licensee; } }
+
+    <span class="pl-k">private</span> <span class="pl-k">readonly</span> LicenseType _type;
+    <span class="pl-k">public</span> LicenseType <span class="pl-en">Type</span> { <span class="pl-k">get</span> { <span class="pl-k">return</span> _type; } }
+
+    <span class="pl-k">protected</span> <span class="pl-en">License</span>(<span class="pl-k">string</span> <span class="pl-smi">licensee</span>, <span class="pl-k">LicenseType</span> <span class="pl-smi">type</span>, <span class="pl-k">byte[]</span> <span class="pl-smi">verificationData</span>)
+    {
+        <span class="pl-k">if</span> (<span class="pl-k">string</span>.IsNullOrEmpty(licensee))
+            <span class="pl-k">throw</span> <span class="pl-k">new</span> ArgumentNullException(<span class="pl-s"><span class="pl-pds">"</span>licensee<span class="pl-pds">"</span></span>);
+        <span class="pl-k">if</span> (verificationData == <span class="pl-c1">null</span>)
+            <span class="pl-k">throw</span> <span class="pl-k">new</span> ArgumentNullException(<span class="pl-s"><span class="pl-pds">"</span>verificationData<span class="pl-pds">"</span></span>);
+
+        _licensee = licensee;
+        _type = type;
+        _isValid = ValidateLicense(verificationData);
+    }
+
+    <span class="pl-k">private</span> <span class="pl-k">bool</span> <span class="pl-en">ValidateLicense</span>(<span class="pl-k">byte[]</span> <span class="pl-smi">signature</span>) { <span class="pl-c">/* TODO */</span> }
+
+    <span class="pl-k">public</span> <span class="pl-k">static</span> License <span class="pl-en">Parse</span>(<span class="pl-k">string</span> <span class="pl-smi">licenseData</span>) { <span class="pl-c">/* TODO */</span> }
+
+    <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">string</span> <span class="pl-en">GeneralizeDataString</span>(<span class="pl-k">string</span> <span class="pl-smi">someString</span>) { <span class="pl-c">/* TODO */</span> }
+}</pre></div>
+
+<p>Außerdem habe ich noch 3 verschiedene Lizenztypen gewählt, um zu zeigen, dass man noch weitere Daten in die Lizenz packen kann:</p>
+
+<div class="highlight highlight-C#"><pre><span class="pl-k">enum</span> <span class="pl-en">LicenseType</span>
+{
+    SingleUser = <span class="pl-c1">1</span>,
+    Commercial,
+    OpenSource
+}</pre></div>
+
+<p>Die Stellen, die mit "TODO" gekennzeichnet sind, werden wir in den nächsten Schritten behandeln.</p>
+
+<h4>
+<a id="05-verwendung-der-lizenz-klasse" class="anchor" href="#05-verwendung-der-lizenz-klasse" aria-hidden="true"><span class="octicon octicon-link"></span></a>0.5 Verwendung der Lizenz-Klasse</h4>
+
+<p>Die Lizenzklasse kann am Ende so verwendet werden:</p>
+
+<div class="highlight highlight-C#"><pre><span class="pl-k">var</span> license = License.Parse(<span class="pl-s"><span class="pl-pds">"</span>----BEGIN LICENSE-----...<span class="pl-pds">"</span></span>);
+<span class="pl-k">if</span>(license.IsValid)
+{
+    Console.WriteLine(<span class="pl-s"><span class="pl-pds">"</span>Gültige Lizenz!<span class="pl-pds">"</span></span>);
+    Console.WriteLine(<span class="pl-s"><span class="pl-pds">"</span>Lizenztyp: <span class="pl-pds">"</span></span> + license.Type);
+}
+<span class="pl-k">else</span>
+{
+    Console.WriteLine(<span class="pl-s"><span class="pl-pds">"</span>Ungültige Lizenz!<span class="pl-pds">"</span></span>);
+}</pre></div>
+
+<p>Der Konstruktor ist <code>protected</code>. Ich habe das in diesem Fall so gewählt, da ich möchte, dass man eine Instanz von License nur mit der Parse-Methode erstellen kann. Natürlich könnte man den Konstruktor auch <code>public</code> machen.</p>
+
+<h3>
+<a id="1-einlesen-der-lizenz" class="anchor" href="#1-einlesen-der-lizenz" aria-hidden="true"><span class="octicon octicon-link"></span></a>1. Einlesen der Lizenz</h3>
+
+<p>Dieser Teil hat eigentlich noch nichts mit Kryptografie zu tun. Es geht nur um das einfache Einlesen der Daten aus dem Lizenzstring, um diese dann an den Konstruktor der License-Klasse zu übergeben.
+Der Parse-Teil sieht bei mir so aus:</p>
+
+<div class="highlight highlight-C#"><pre><span class="pl-k">public</span> <span class="pl-k">static</span> License Parse(<span class="pl-k">string</span> licenseData)
+{
+    <span class="pl-c">// Pattern, um an die Daten zwischen BEGIN und END zu kommen</span>
+    <span class="pl-k">const</span> <span class="pl-k">string</span> pattern = <span class="pl-s"><span class="pl-pds">"</span>^<span class="pl-cce">\\</span>s*-+BEGIN LICENSE-+(?&lt;data&gt;(<span class="pl-cce">\\</span>s|.)*?)-+END LICENSE-+<span class="pl-cce">\\</span>s*$<span class="pl-pds">"</span></span>;
+
+    <span class="pl-k">var</span> match = Regex.Match(licenseData, pattern, RegexOptions.IgnoreCase); <span class="pl-c">// string auf Muster prüfen</span>
+    <span class="pl-k">if</span> (!match.Success) <span class="pl-c">// Wenn das Muster nicht gematched wurde, ist der Lizenz-String nicht lesbar und somit ungültig.</span>
+        <span class="pl-k">throw</span> <span class="pl-k">new</span> FormatException();
+
+    <span class="pl-k">var</span> rawStringData = match.Groups[<span class="pl-s"><span class="pl-pds">"</span>data<span class="pl-pds">"</span></span>].Value;
+    <span class="pl-k">if</span> (<span class="pl-k">string</span>.IsNullOrWhiteSpace(rawStringData)) <span class="pl-c">// Wenn die Daten zwischen BEGIN und END leer bzw nur WhiteSpace sind -&gt; ungültig</span>
+        <span class="pl-k">throw</span> <span class="pl-k">new</span> FormatException();
+    rawStringData = rawStringData.Trim(); <span class="pl-c">// sonstiges whitespace trimmen (links udn rechts)</span>
+
+    <span class="pl-k">var</span> splitData = rawStringData.Split(<span class="pl-s"><span class="pl-pds">'</span><span class="pl-cce">\n</span><span class="pl-pds">'</span></span>); <span class="pl-c">// Splitten beim Zeilenumbruch</span>
+    <span class="pl-k">if</span> (splitData.Length &lt; <span class="pl-c1">3</span>) <span class="pl-c">// Wenn es weniger als 3 Zeilen (Name, Typ, Signatur) waren -&gt; ungültig</span>
+        <span class="pl-k">throw</span> <span class="pl-k">new</span> FormatException();
+
+    <span class="pl-c">// Ab hier findet auch Schirtt 1.1 statt:</span>
+    <span class="pl-c">// 1.1. Auftrennung der Lizenz in einzelne Datenparameter (Name, Typ, Signatur)</span>
+
+    <span class="pl-k">var</span> licenseeRaw = splitData[<span class="pl-c1">0</span>].Trim(); <span class="pl-c">// Name des Lizenznehmers in 1. Zeile</span>
+    <span class="pl-k">var</span> licenseTypeRaw = splitData[<span class="pl-c1">1</span>].Trim(); <span class="pl-c">// Integer-Wert des Enum-Members von LicenseType in 2. Zeile</span>
+
+    <span class="pl-k">var</span> type = (LicenseType)<span class="pl-k">int</span>.Parse(licenseTypeRaw); <span class="pl-c">// Integer-Wert in LicenseType umwandeln</span>
+
+    <span class="pl-k">if</span> (type != LicenseType.SingleUser
+        &amp;&amp; type != LicenseType.Commercial
+        &amp;&amp; type != LicenseType.OpenSource)
+    {
+        <span class="pl-c">// Enums könenn auch Werte annehmen, die nicht im Enum definiert sind, z. B. durch einen Cast.</span>
+        <span class="pl-c">// Falls dies bei LicenseType der Fall ist -&gt; ungültig</span>
+        <span class="pl-k">throw</span> <span class="pl-k">new</span> FormatException();
+    }
+
+    <span class="pl-c">// Die Signatur besteht aus allen verbleibenden Zeilen</span>
+    <span class="pl-k">var</span> verificationDataRaw = <span class="pl-k">string</span>.Join(<span class="pl-k">string</span>.Empty, splitData.Skip(<span class="pl-c1">2</span>)).Trim();
+
+    <span class="pl-c">// Dekodierung des Strings zu Binärdaten (byte[]).</span>
+    <span class="pl-k">var</span> verificationData = DecodeDataFromString(verificationDataRaw);
+
+    <span class="pl-c">// Bis hier hin konnte alles erfolgreich eingelesen werden</span>
+    <span class="pl-c">// Ob die Daten aber gültig (== Signatur ist korrekt) sind, wird später überprüft.</span>
+
+    <span class="pl-k">return</span> <span class="pl-k">new</span> License(licenseeRaw, type, verificationData); <span class="pl-c">// Rückgabe des Lizenz-Objektes mit den eingelesenen Daten</span>
+}
+
+
+<span class="pl-c">// Zum Dekodieren der Signaturdaten wird diese Funkton verwendet.</span>
+<span class="pl-c">// Wir könnten auch base64 verwenden, dabei hat man jedoch wieder Groß- und Kleinschreibung, was doof ist, sollte sich jemand die Mühe machen, alles in kleinbuchstaben abzutippen.</span>
+<span class="pl-c">// Wenn man das durch Convert.FromBase64String() ersetzt, muss man auf der Server-Seite evenfalls die funktion ersetzen.</span>
+<span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">byte</span>[] DecodeDataFromString(<span class="pl-k">string</span> <span class="pl-k">value</span>)
+{
+    <span class="pl-c">// Hexadezimaen String zurück in Byte-Daten umwandeln</span>
+    <span class="pl-c">// macht das gleiche wie PHPs hex2bin; kehrt das bin2hex um.</span>
+
+    <span class="pl-k">if</span> (<span class="pl-k">value</span> == <span class="pl-c1">null</span>)
+        <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-k">byte</span>[<span class="pl-c1">0</span>];
+
+    <span class="pl-k">if</span> ((<span class="pl-k">value</span>.Length &amp; <span class="pl-c1">1</span>) != <span class="pl-c1">0</span>) <span class="pl-c">// Länge der Daten ist nicht durch 2 teilbar -&gt; kein gültiger hexadezimaler string</span>
+        <span class="pl-k">throw</span> <span class="pl-k">new</span> FormatException();
+
+    <span class="pl-k">if</span> (<span class="pl-k">string</span>.IsNullOrWhiteSpace(<span class="pl-k">value</span>))
+        <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-k">byte</span>[<span class="pl-c1">0</span>];
+
+    <span class="pl-k">value</span> = <span class="pl-k">value</span>.ToUpperInvariant();
+
+    <span class="pl-k">byte</span>[] ab = <span class="pl-k">new</span> <span class="pl-k">byte</span>[<span class="pl-k">value</span>.Length &gt;&gt; <span class="pl-c1">1</span>];
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; <span class="pl-k">value</span>.Length; i++)
+    {
+        <span class="pl-k">int</span> b = <span class="pl-k">value</span>[i];
+        b = (b - <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span>) + (((<span class="pl-s"><span class="pl-pds">'</span>9<span class="pl-pds">'</span></span> - b) &gt;&gt; <span class="pl-c1">31</span>) &amp; -<span class="pl-c1">7</span>);
+        ab[i &gt;&gt; <span class="pl-c1">1</span>] |= (<span class="pl-k">byte</span>)(b &lt;&lt; <span class="pl-c1">4</span> * ((i &amp; <span class="pl-c1">1</span>) ^ <span class="pl-c1">1</span>));
+    }
+    <span class="pl-k">return</span> ab;
+}</pre></div>
+
+<p>Wie gesagt. Ich verwende hier ein Format, das ich von Sublime Text abgeschaut habe. Du kannst Dir auch ein eigenes ausdenken, das auf z. B. XML oder JSON basiert, um Dir das Auslesen zu vereinfachen.</p>
+
+<h3>
+<a id="2-standardisierung-der-übergebenen-daten-in-einheitliches-format" class="anchor" href="#2-standardisierung-der-%C3%BCbergebenen-daten-in-einheitliches-format" aria-hidden="true"><span class="octicon octicon-link"></span></a>2. Standardisierung der übergebenen Daten in einheitliches Format</h3>
+
+<p>Da wir nicht sicher ein können, dass unser Benutzer seinen Namen leicht abgeändert hat, müssen wir das Gane in ein Standard-Format bringen. Dies ist sinnvoll, da z. B. "Erika Mustermann" und "erika Mustermann" den gleichen Namen bezeichnen, aber ansich unterschiedliche Strings sind.
+Hierfür habe ich folgende Funktion angelegt:</p>
+
+<div class="highlight highlight-C#"><pre><span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">string</span> GeneralizeDataString(<span class="pl-k">string</span> someString)
+{
+    <span class="pl-k">return</span> someString.StripWhiteSpace().ToUpperInvariant();
+}</pre></div>
+
+<p>Die StripWhiteSpace-Funktion ist als String-Extension wie folgt definiert:</p>
+
+<div class="highlight highlight-C#"><pre><span class="pl-k">internal</span> <span class="pl-k">static</span> <span class="pl-k">class</span> <span class="pl-en">StringExtensions</span>
+{
+    <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-k">string</span> <span class="pl-en">StripWhiteSpace</span>(<span class="pl-k">this</span> <span class="pl-smi">string</span> value)
+    {
+        <span class="pl-k">if</span> (<span class="pl-k">value</span> == <span class="pl-c1">null</span>)
+            <span class="pl-k">return</span> <span class="pl-c1">null</span>;
+        <span class="pl-k">if</span> (<span class="pl-k">value</span>.Length == <span class="pl-c1">0</span> || <span class="pl-k">value</span>.Trim().Length == <span class="pl-c1">0</span>)
+            <span class="pl-k">return</span> <span class="pl-k">string</span>.Empty;
+        <span class="pl-k">var</span> sb = <span class="pl-k">new</span> StringBuilder(<span class="pl-k">value</span>.Length);
+        <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; <span class="pl-k">value</span>.Length; ++i)
+            <span class="pl-k">if</span> (!<span class="pl-k">char</span>.IsWhiteSpace(<span class="pl-k">value</span>[i]))
+                sb.Append(<span class="pl-k">value</span>[i]);
+        <span class="pl-k">return</span> sb.ToString();
+    }
+}</pre></div>
+
+<p>Diese funktion entfernt sämtlichen Whitespace aus dem String und konvertiert anschließend alle Buchstaben in Großbuchstaben.
+So wird:
+<code>"Erika Mustermann"</code> zu <code>"ErikaMustermann"</code> zu <code>"ERIKAMUSTERMANN"</code>
+...und dementsprechend
+<code>"erika Mustermann"</code> zu <code>"erikaMustermann"</code> zu <code>"ERIKAMUSTERMANN"</code>
+Auch <code>"eRikA musStermAnN"</code> wird zu <code>"ERIKAMUSTERMANN"</code>.
+Dadurch erreichen wir, dass die Lizenz weniger anfällig für Änderungen ist, die ein unerfahrener Benutzer eventuell vornehmen könnte (Änderung des String-Casings).</p>
+
+<p>Dieser Schritt ist für alle Daten nötig, die für soetwas anfällig wären. In diesem Beispiel sind das aber keine weiteren.</p>
+
+<h3>
+<a id="3-validierung-der-daten-mittels-überprüfung-der-rsa-signatur" class="anchor" href="#3-validierung-der-daten-mittels-%C3%BCberpr%C3%BCfung-der-rsa-signatur" aria-hidden="true"><span class="octicon octicon-link"></span></a>3. Validierung der Daten mittels überprüfung der RSA-Signatur</h3>
+
+<p>Nun kommt der eigentlich kryptografische Teil und auch die letzte Funktion der License-Klasse.</p>
+
+<div class="highlight highlight-C#"><pre><span class="pl-k">private</span> <span class="pl-k">bool</span> ValidateLicense(<span class="pl-k">byte</span>[] signature)
+{
+    <span class="pl-c">// Um die Lizenz auf Gültigkeit zu prüfen müssen alle zu prüfenden Parameter (Name, Typ) in einen Buffer gepackt werden</span>
+    <span class="pl-c">// Dies kann man wie folgt umsetzen:</span>
+
+    <span class="pl-c">// Standardisierung des Namens des Lizenznehmers</span>
+    <span class="pl-k">var</span> licenseeGen = GeneralizeDataString(<span class="pl-c1">this</span>._licensee); <span class="pl-c">// "ERIKAMUSTERMANN"</span>
+
+    <span class="pl-c">// Zusammenfüren des Namens "ERIKAMUSTERMANN" mit dem Int-Wert des Lizenztyps (z. B. 2 für "Commercial").</span>
+    <span class="pl-k">var</span> dataStr = licenseeGen + (<span class="pl-k">int</span>)<span class="pl-c1">this</span>._type; <span class="pl-c">//ERIKAMUSTERMANN2</span>
+
+    <span class="pl-c">// Erstellen eines Byte-Arrays aus dem zusammengefügten String</span>
+    <span class="pl-k">var</span> dataBuffer = System.Text.Encoding.UTF8.GetBytes(dataStr);
+
+    <span class="pl-c">// Crypto-Provider erstellen</span>
+    <span class="pl-k">using</span> (<span class="pl-k">var</span> provider = <span class="pl-k">new</span> RSACryptoServiceProvider())
+    {
+        <span class="pl-c">// Den Public Key festlegen</span>
+        provider.FromXmlString(_publicKey);
+        provider.PersistKeyInCsp = <span class="pl-c1">false</span>;
+
+        <span class="pl-c">// Daten mit VerifyData überprüfen</span>
+        <span class="pl-c">// Übergeben wird hier der Datenpuffer, das Hashing-Verfahren für die Signatur und Signatur selbst</span>
+        <span class="pl-c">// In diesem Fall verwende ich SHA1</span>
+        <span class="pl-k">return</span> provider.VerifyData(dataBuffer, <span class="pl-k">new</span> SHA1CryptoServiceProvider(), signature);
+        <span class="pl-c">// Wenn die Daten gültig sind, sind die Lizenzdaten ebenfalls gültig. Wenn nicht, dann nicht.</span>
+    }
+}</pre></div>
+
+<p>Das war's schon fast! Wir benötigen nun noch ein Schlüsselpaar. Dieses kann man z. B. mit OpenSSL erzeugen. Ich nehme hier jetzt mal ein Beispiel-Schlüsselpaar, welches Du nicht improduktiven Einsatz verwenden solltest!(!)</p>
+
+<p>Mein Private Key in dem Fall:</p>
+
+<div class="highlight highlight-XML"><pre>&lt;<span class="pl-ent">RSAKeyValue</span>&gt;&lt;<span class="pl-ent">Modulus</span>&gt;8CKn78RI6h7vNOPMeMCeRCHegEgG1nR+X84B8b3sOZF6hAjDXF80ag1Zw1T0E+NVHmbPB8aLgRPmQPA351ZR8D+BCHooDlGqstLLHiqTu9bbqRVPti46XBeju3Fbi47euO+omH0sq7LCuIZ5s1WBmTc9ejkkfc/0rk3fAYaIRuE=&lt;/<span class="pl-ent">Modulus</span>&gt;&lt;<span class="pl-ent">Exponent</span>&gt;AQAB&lt;/<span class="pl-ent">Exponent</span>&gt;&lt;<span class="pl-ent">P</span>&gt;/m1FEqol/KKhxOyGsK4GVuansBXhrAgpwMlYLT+vF0gy1jzYQDNNQXzeQFYH6gZY66RTYFl3JPNL8KXLyhwDLQ==&lt;/<span class="pl-ent">P</span>&gt;&lt;<span class="pl-ent">Q</span>&gt;8Z7DrGQsGhiLgg70j40/+AgfNKJB4SXY7FmyBmLPRiHkT2d3AyvzuNNf/hkHA2UMLQT4xewmkxK9MU2nDitzBQ==&lt;/<span class="pl-ent">Q</span>&gt;&lt;<span class="pl-ent">DP</span>&gt;uRVOSSyjo6u/WJzjwoVmMTNryymv2FC75vXRgmEwgxRPfxAWFGX9jmVC3LR432KsrwcEbDPI+4VNugsyO52zJQ==&lt;/<span class="pl-ent">DP</span>&gt;&lt;<span class="pl-ent">DQ</span>&gt;AJFY8FzD5cPNAB883+F7FwAd4qfG89p86gFD89PjnMyTlsQteWpvBi4o+ZXheFaScsCiPQTTCmFu5GDEVbowaQ==&lt;/<span class="pl-ent">DQ</span>&gt;&lt;<span class="pl-ent">InverseQ</span>&gt;7gQ8MGqjjrCAfOzrrC9ZuVdGRfEjUEdHMqiF+js7XNBvnT5lBznUOd+eta6CGo7S5hjU7D3CEzmVGQfxUsRZ1w==&lt;/<span class="pl-ent">InverseQ</span>&gt;&lt;<span class="pl-ent">D</span>&gt;6YSaERSs31dTwPghV+/gOFtDVzYzyAqi9iGMTHwnotfw70LiUAqZGuR+vO/5Jvn0RUsu2t3dvZkPWWkAxCtyIzALk8Brx1r8n76VHVWMzkZvOoqMa1/HdZCXM0TVlpnYVJjyUA8wzi4tzPIPv08lAGwYJzHcoMlFHkQ2npqflxE=&lt;/<span class="pl-ent">D</span>&gt;&lt;/<span class="pl-ent">RSAKeyValue</span>&gt;</pre></div>
+
+<p>(Anmerkung: Beim XML-Format ist hier der Public Key mit dabei)</p>
+
+<p>Der dazugehörige Public Key:</p>
+
+<div class="highlight highlight-XML"><pre>&lt;<span class="pl-ent">RSAKeyValue</span>&gt;&lt;<span class="pl-ent">Modulus</span>&gt;8CKn78RI6h7vNOPMeMCeRCHegEgG1nR+X84B8b3sOZF6hAjDXF80ag1Zw1T0E+NVHmbPB8aLgRPmQPA351ZR8D+BCHooDlGqstLLHiqTu9bbqRVPti46XBeju3Fbi47euO+omH0sq7LCuIZ5s1WBmTc9ejkkfc/0rk3fAYaIRuE=&lt;/<span class="pl-ent">Modulus</span>&gt;&lt;<span class="pl-ent">Exponent</span>&gt;AQAB&lt;/<span class="pl-ent">Exponent</span>&gt;&lt;/<span class="pl-ent">RSAKeyValue</span>&gt;</pre></div>
+
+<p>Ich habe beide Schlüssel jetzt im XML-Format. Wenn Du andere Formate bevorzugst, kannst Du diese auch verwenden. Ich nehme jetzt dieses, da dieses Format von Haus aus mit .NET kompatibel ist und die PHP-Library PHPSecLib es ebenfalls unterstützt.</p>
+
+<p>Der Private Key wird zum erstellen einer Lizenzdatei verwendet. Dieser darf niemals preisgegeben werden. Sobald jemand im Besitz dieses Schlüssels ist, kann derjenige sich so viele Lizenzen erstellen, wie er will!(!). Der Private Key darf auch keinesfalls irgendwo im Quelltext der Anwendung stehen, die an die Benutzer rausgeht!</p>
+
+<h4>
+<a id="weiter-im-text" class="anchor" href="#weiter-im-text" aria-hidden="true"><span class="octicon octicon-link"></span></a>...weiter im Text.</h4>
+
+<p>Den Public Key fügen wir einfach oben als String-Wert der Konstante ein.</p>
+
+<div class="highlight highlight-C#"><pre><span class="pl-k">private</span> <span class="pl-k">const</span> <span class="pl-k">string</span> _publicKey = <span class="pl-s"><span class="pl-pds">@"&lt;RSAKeyValue&gt;&lt;Modulus&gt;8CKn78RI6h7vNOPMeMCeRCHegEgG1nR+X84B8b3sOZF6hAjDXF80ag1Zw1T0E+NVHmbPB8aLgRPmQPA351ZR8D+BCHooDlGqstLLHiqTu9bbqRVPti46XBeju3Fbi47euO+omH0sq7LCuIZ5s1WBmTc9ejkkfc/0rk3fAYaIRuE=&lt;/Modulus&gt;&lt;Exponent&gt;AQAB&lt;/Exponent&gt;&lt;/RSAKeyValue&gt;"</span></span>;</pre></div>
+
+<p>Soweit sind wir fertig! Der Client kann nun eine Lizenz parsen, sie in eine Klasse stecken und mittels RSA-Signatur validieren.</p>
+
+<h3>
+<a id="lizenzen-ausstellen" class="anchor" href="#lizenzen-ausstellen" aria-hidden="true"><span class="octicon octicon-link"></span></a>Lizenzen ausstellen</h3>
+
+<p>Um Lizenzen auszustellen benötigen wir den Private Key. Bitte achte darauf, dass <em>niemand</em> außer Dir Zugriff auf diesen Schlüssel haben darf.</p>
+
+<p>Um dies zu tun bietet sich ein Server an.</p>
+
+<p>Mit PHP und der PHPSecLib könnte es wie folgt gehen. Die PHPSecLib bekommst du <a href="http://phpseclib.sourceforge.net">hier</a>. Falls du das GitHub-Repo geklont hast, ist es dort ebenfalls dabei.</p>
+
+<div class="highlight highlight-PHP"><pre><span class="pl-s1"><span class="pl-c">// Abbildung des Enums, das wir auch in der Client-Anwendung haben</span></span>
+<span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">LicenseType</span></span>
+<span class="pl-s1">{</span>
+<span class="pl-s1">    <span class="pl-k">const</span> <span class="pl-c1">Personal</span> <span class="pl-k">=</span> <span class="pl-c1">1</span>;</span>
+<span class="pl-s1">    <span class="pl-k">const</span> <span class="pl-c1">Commercial</span> <span class="pl-k">=</span> <span class="pl-c1">2</span>;</span>
+<span class="pl-s1">    <span class="pl-k">const</span> <span class="pl-c1">OpenSource</span> <span class="pl-k">=</span> <span class="pl-c1">3</span>;</span>
+<span class="pl-s1">}</span></pre></div>
+
+<div class="highlight highlight-PHP"><pre><span class="pl-s1"><span class="pl-c">// Generierung von Lizenzen in einer separaten Klasse</span></span>
+<span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">LicenseCreator</span></span>
+<span class="pl-s1">{</span>
+<span class="pl-s1">    <span class="pl-c">// Niemals anderen Leuten zugänglich machen!</span></span>
+<span class="pl-s1">    <span class="pl-k">const</span> <span class="pl-c1">privateKey</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>&lt;RSAKeyValue&gt;&lt;Modulus&gt;8CKn78RI6h7vNOPMeMCeRCHegEgG1nR+X84B8b3sOZF6hAjDXF80ag1Zw1T0E+NVHmbPB8aLgRPmQPA351ZR8D+BCHooDlGqstLLHiqTu9bbqRVPti46XBeju3Fbi47euO+omH0sq7LCuIZ5s1WBmTc9ejkkfc/0rk3fAYaIRuE=&lt;/Modulus&gt;&lt;Exponent&gt;AQAB&lt;/Exponent&gt;&lt;P&gt;/m1FEqol/KKhxOyGsK4GVuansBXhrAgpwMlYLT+vF0gy1jzYQDNNQXzeQFYH6gZY66RTYFl3JPNL8KXLyhwDLQ==&lt;/P&gt;&lt;Q&gt;8Z7DrGQsGhiLgg70j40/+AgfNKJB4SXY7FmyBmLPRiHkT2d3AyvzuNNf/hkHA2UMLQT4xewmkxK9MU2nDitzBQ==&lt;/Q&gt;&lt;DP&gt;uRVOSSyjo6u/WJzjwoVmMTNryymv2FC75vXRgmEwgxRPfxAWFGX9jmVC3LR432KsrwcEbDPI+4VNugsyO52zJQ==&lt;/DP&gt;&lt;DQ&gt;AJFY8FzD5cPNAB883+F7FwAd4qfG89p86gFD89PjnMyTlsQteWpvBi4o+ZXheFaScsCiPQTTCmFu5GDEVbowaQ==&lt;/DQ&gt;&lt;InverseQ&gt;7gQ8MGqjjrCAfOzrrC9ZuVdGRfEjUEdHMqiF+js7XNBvnT5lBznUOd+eta6CGo7S5hjU7D3CEzmVGQfxUsRZ1w==&lt;/InverseQ&gt;&lt;D&gt;6YSaERSs31dTwPghV+/gOFtDVzYzyAqi9iGMTHwnotfw70LiUAqZGuR+vO/5Jvn0RUsu2t3dvZkPWWkAxCtyIzALk8Brx1r8n76VHVWMzkZvOoqMa1/HdZCXM0TVlpnYVJjyUA8wzi4tzPIPv08lAGwYJzHcoMlFHkQ2npqflxE=&lt;/D&gt;&lt;/RSAKeyValue&gt;<span class="pl-pds">'</span></span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-k">function</span> <span class="pl-en">CreateLicense</span>(<span class="pl-smi">$licensee</span>, <span class="pl-smi">$type</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-c">// Gleiche Generalisierung wie am Client:</span></span>
+<span class="pl-s1">        <span class="pl-smi">$licenseeGen</span> <span class="pl-k">=</span> <span class="pl-k">self</span><span class="pl-k">::</span>GeneralizeDataString(<span class="pl-smi">$licensee</span>);</span>
+<span class="pl-s1">        <span class="pl-smi">$dataStr</span> <span class="pl-k">=</span> <span class="pl-smi">$licenseeGen</span> <span class="pl-k">.</span> (<span class="pl-k">int</span>)<span class="pl-smi">$type</span>; <span class="pl-c">// "ERIKAMUSTERMANN2"</span></span>
+<span class="pl-s1"></span>
+<span class="pl-s1">        <span class="pl-smi">$rsa</span> <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-c1">Crypt_RSA</span>(); <span class="pl-c">// Neue RSA-Klasse erstellen</span></span>
+<span class="pl-s1"></span>
+<span class="pl-s1">        <span class="pl-c">// Setzen der RSA-Optionen auf die, die auch am Client verwendet werden:</span></span>
+<span class="pl-s1">        <span class="pl-smi">$rsa</span><span class="pl-k">-&gt;</span>setPrivateKeyFormat(<span class="pl-c1">CRYPT_RSA_PRIVATE_FORMAT_XML</span>);</span>
+<span class="pl-s1">        <span class="pl-smi">$rsa</span><span class="pl-k">-&gt;</span>setHash(<span class="pl-s"><span class="pl-pds">'</span>SHA1<span class="pl-pds">'</span></span>);</span>
+<span class="pl-s1">        <span class="pl-smi">$rsa</span><span class="pl-k">-&gt;</span>setSignatureMode(<span class="pl-c1">CRYPT_RSA_SIGNATURE_PKCS1</span>);</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">        <span class="pl-c">// privaten Schlüssel laden</span></span>
+<span class="pl-s1">        <span class="pl-smi">$rsa</span><span class="pl-k">-&gt;</span>loadKey(<span class="pl-k">self</span><span class="pl-k">::</span><span class="pl-c1">privateKey</span>);</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">        <span class="pl-c">// Erstellen der Signatur</span></span>
+<span class="pl-s1">        <span class="pl-smi">$signature</span> <span class="pl-k">=</span> <span class="pl-smi">$rsa</span><span class="pl-k">-&gt;</span>sign(<span class="pl-smi">$dataStr</span>);</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">        <span class="pl-c">// Formatierte Lizenzdaten zurückgeben</span></span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-k">self</span><span class="pl-k">::</span>FormatLicense(<span class="pl-smi">$licensee</span>, <span class="pl-smi">$type</span>, <span class="pl-smi">$signature</span>);</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">function</span> <span class="pl-en">FormatLicense</span>(<span class="pl-smi">$licensee</span>, <span class="pl-smi">$type</span>, <span class="pl-smi">$signature</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-c">// Binärdaten aus $signature in hexadezimal kodierten String umwandeln</span></span>
+<span class="pl-s1">        <span class="pl-smi">$formattedSignature</span> <span class="pl-k">=</span> <span class="pl-k">self</span><span class="pl-k">::</span>EncodeDataToHexString(<span class="pl-smi">$signature</span>);</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">        <span class="pl-c">// Signatur in 29-Zeichen-Blöcke aufteilen (sieht schöner aus)</span></span>
+<span class="pl-s1">        <span class="pl-smi">$formattedSignature</span> <span class="pl-k">=</span> <span class="pl-c1">chunk_split</span>(<span class="pl-smi">$formattedSignature</span>, <span class="pl-c1">29</span>);</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">        <span class="pl-smi">$l</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>--------BEGIN LICENSE--------<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>; <span class="pl-c">// Unser Anfangsblock</span></span>
+<span class="pl-s1">        <span class="pl-smi">$l</span> <span class="pl-k">.=</span> <span class="pl-smi">$licensee</span> <span class="pl-k">.</span> <span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>; <span class="pl-c">// Der Name des Lizenznehmers</span></span>
+<span class="pl-s1">        <span class="pl-smi">$l</span> <span class="pl-k">.=</span> (<span class="pl-k">int</span>)<span class="pl-smi">$type</span> <span class="pl-k">.</span> <span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>; <span class="pl-c">// Der Lizenztyp als Int</span></span>
+<span class="pl-s1">        <span class="pl-smi">$l</span> <span class="pl-k">.=</span> <span class="pl-c1">trim</span>(<span class="pl-smi">$formattedSignature</span>) <span class="pl-k">.</span> <span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>; <span class="pl-c">// die in mehrere Zeilen aufgeteilte, kodierte Signatur</span></span>
+<span class="pl-s1">        <span class="pl-smi">$l</span> <span class="pl-k">.=</span> <span class="pl-s"><span class="pl-pds">"</span>---------END LICENSE---------<span class="pl-pds">"</span></span>; <span class="pl-c">// Ende der Lizenz</span></span>
+<span class="pl-s1"></span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$l</span>;</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">function</span> <span class="pl-en">EncodeDataToHexString</span>(<span class="pl-smi">$data</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-c1">strtoupper</span>(<span class="pl-c1">bin2hex</span>(<span class="pl-smi">$data</span>));</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">function</span> <span class="pl-en">GeneralizeDataString</span>(<span class="pl-smi">$someString</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-c">// Gleiche Funktion wie am Client</span></span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-c1">strtoupper</span>(<span class="pl-k">self</span><span class="pl-k">::</span>StripWhiteSpace(<span class="pl-smi">$someString</span>));</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">function</span> <span class="pl-en">StripWhiteSpace</span>(<span class="pl-smi">$someString</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-c">// Gleiche Funktion wie am Client, nur mit RegEx</span></span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-c1">preg_replace</span>(<span class="pl-sr"><span class="pl-pds">'/</span><span class="pl-cce">\s</span><span class="pl-k">+</span><span class="pl-pds">/'</span></span>, <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span>, <span class="pl-smi">$someString</span>);</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1">}</span></pre></div>
+
+<h3>
+<a id="abschluss" class="anchor" href="#abschluss" aria-hidden="true"><span class="octicon octicon-link"></span></a>Abschluss</h3>
+
+<p>Das war's.</p>
+
+<p>Auf der Serverseite können wir nun mit Hilfe der LicenseCreator-Klasse eine Lizenz erstellen:</p>
+
+<div class="highlight highlight-PHP"><pre><span class="pl-s1"><span class="pl-smi">$license</span> <span class="pl-k">=</span> <span class="pl-c1">LicenseCreator</span><span class="pl-k">::</span>CreateLicense(<span class="pl-s"><span class="pl-pds">"</span>Erika Mustermann<span class="pl-pds">"</span></span>, <span class="pl-c1">LicenseType</span><span class="pl-k">::</span><span class="pl-c1">Commercial</span>);</span></pre></div>
+
+<p>Heraus kommt sowas:</p>
+
+<pre><code>--------BEGIN LICENSE--------
+Erika Mustermann
+2
+0D0E9D62B80195C9C867CF451C312
+80593BFAEE80450BDD46A2CEAFFED
+6D378CD9408B328B05AC2C8D9A7AE
+D8B8B69D44DBF66EA0F814A800393
+7AD16197EF4DB28FDD27CFF58B1FC
+14DF3CD7912C41C2573BB0A0D59AD
+94BE0EFCD804D8A809875F13CAC70
+137F24E30478AE8DFD3B94025A38D
+80D636637F725887869ED77E
+---------END LICENSE---------
+</code></pre>
+
+<p>Dieser String kann am Client validiert werden.</p>
+
+<div class="highlight highlight-C#"><pre><span class="pl-k">var</span> license = License.Parse(lizenzString);
+Console.WriteLine(<span class="pl-s"><span class="pl-pds">"</span>Lizenz gültig? <span class="pl-pds">"</span></span> + license.IsValid);
+<span class="pl-k">if</span>(license.IsValid)
+    Console.WriteLine(<span class="pl-s"><span class="pl-pds">"</span>Lizenztyp: <span class="pl-pds">"</span></span> + license.Type);</pre></div>
+
+<h4>
+<a id="was-es-zu-beachten-gibt" class="anchor" href="#was-es-zu-beachten-gibt" aria-hidden="true"><span class="octicon octicon-link"></span></a>Was es zu beachten gibt</h4>
+
+<ul>
+<li>Die Schlüssel sollten lang genug gewühlt werden (mindestens 2048 Bit sollten ausreichen)</li>
+<li>Niemand anders sollte auf den Private Key Zugriff haben, da das komplette System sonst hinfällig ist.</li>
+</ul>
+
+<h4>
+<a id="erstellen-von-schlüsseln" class="anchor" href="#erstellen-von-schl%C3%BCsseln" aria-hidden="true"><span class="octicon octicon-link"></span></a>Erstellen von Schlüsseln</h4>
+
+<p>Dafür kannst Du OpenSSL oder andere Kryptosoftware verwenden. Wichtig ist nur, dass Du die Schlüssel später auch in der Anwendung verwenden kannst. Du kannst aber auch rein bei .NET bleiben. Ich mache es z. B. so:</p>
+
+<div class="highlight highlight-C#"><pre><span class="pl-k">const</span> <span class="pl-k">int</span> KeyLength = <span class="pl-c1">2048</span>;
+<span class="pl-k">var</span> rsa = <span class="pl-k">new</span> RSACryptoServiceProvider(KeyLength);
+File.WriteAllText(<span class="pl-s"><span class="pl-pds">"</span>private_key.xml<span class="pl-pds">"</span></span>, rsa.ToXmlString(<span class="pl-c1">true</span>));
+File.WriteAllText(<span class="pl-s"><span class="pl-pds">"</span>public_key.xml<span class="pl-pds">"</span></span>, rsa.ToXmlString(<span class="pl-c1">false</span>));</pre></div>
+
+<h4>
+<a id="vorteile-und-nachteile-dieser-methode" class="anchor" href="#vorteile-und-nachteile-dieser-methode" aria-hidden="true"><span class="octicon octicon-link"></span></a>Vorteile und Nachteile dieser Methode</h4>
+
+<h5>
+<a id="vorteile" class="anchor" href="#vorteile" aria-hidden="true"><span class="octicon octicon-link"></span></a>Vorteile</h5>
+
+<ul>
+<li>Keine Internetverbindung zum Validieren der Lizenz notwendig</li>
+<li>Key-Generatoren sind so gut wie unmöglich, solange der Schlüssel lang genug gewählt wurde und der Private key privat bleibt</li>
+<li>Geringe Fehleranfälligkeit, da man nicht auf Firewall-/Firmen-Umgebungen, die UAC oder ähnliches Rücksicht nehmen muss.</li>
+</ul>
+
+<h5>
+<a id="nachteile" class="anchor" href="#nachteile" aria-hidden="true"><span class="octicon octicon-link"></span></a>Nachteile</h5>
+
+<ul>
+<li>Sehr einfach zu cracken</li>
+</ul>
+
+<h4>
+<a id="was-noch-gemacht-werden-muss" class="anchor" href="#was-noch-gemacht-werden-muss" aria-hidden="true"><span class="octicon octicon-link"></span></a>Was noch gemacht werden muss</h4>
+
+<ul>
+<li>License.TryParse(), bei der keine Exception geworfen wird</li>
+<li>Server-Beispiel mit Node.js</li>
+</ul>
+
+<h4>
+<a id="einfach-zu-cracken-vs-keygens-unmöglich" class="anchor" href="#einfach-zu-cracken-vs-keygens-unm%C3%B6glich" aria-hidden="true"><span class="octicon octicon-link"></span></a>"Einfach zu Cracken" vs "Keygens unmöglich":</h4>
+
+<p>Das hört sich im ersten Moment recht widersprüchlich an, aber so ist es. Jemand könnte die Anwendung leicht cracken, indem an der entsprechenden Stelle einfach ein "return true;" eingefügt wird. Um dies zu tun, muss derjenige allerdings die Anwendung bearbeiten. Das hat den "Nachteil", dass wenn ein Update der Anwendung erscheint, er dies erneut machen muss. Das bringt einen zusätzlichen Aufwand mit sich.</p>
+
+<h4>
+<a id="meine-meinung-zu-dem-thema" class="anchor" href="#meine-meinung-zu-dem-thema" aria-hidden="true"><span class="octicon octicon-link"></span></a>Meine Meinung zu dem Thema:</h4>
+
+<p>Ich finde, man sollte sein Programm nicht mit irgendwelchem "unknackbaren" Lizenzkram verwurschteln, was es am Ende nur fehleranfälliger und unbenutzbarer macht. Wirklich viel mehr geschützt ist es dadurch auch nicht.
+Generell sollte man IMO die Zeit lieber in die Funktionalität des Programms statt in ein komplexes Lizenzsystem stecken.
+Das hier gezeigte System ähnelt stark dem, welches u. A. bei Sublime Text zum Einsatz kommt.
+Ich finde diese Herangehensweise noch vertretbar, da sie recht simpel gehalten ist und trotzdem noch eine (kleine) Hürde bietet.
+Dieser Beitrag soll nicht bedeuten, dass man in allen Programmen so ein System einbauen soll. Nein, ganz und gar nicht. Ich bin ein freund von freier und offener Software und will lediglich zeigen, wie man diese Problemstellung angehen kann.
+Außerdem habe ich auf meiner Arbeit oft mit schlecht programmierter Software zu tun, die häufig wegen ignorant implementiertem Lizenzkram die Funktion verweigert.
+Beispiel?
+<a href="https://stackoverflow.com/q/25486319/785210">Hier</a> will Jemand irgendwelchen Lizenzkram mit Festplattenseriennummern hinfriemeln. Aus irgendeinem Grund funktioniert das aber nicht immer, weshalb seine Software wahrscheinlich unrechtmäßig die Funktion verweigern wird. Sowas nervt absolut jeden Sysadmin und Anwender. Lasst sowas bitte.</p>
+
+<h4>
+<a id="disclaimer" class="anchor" href="#disclaimer" aria-hidden="true"><span class="octicon octicon-link"></span></a>Disclaimer</h4>
+
+<p>Das Übliche:
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/nikeee/license-system">License-system</a> is maintained by <a href="https://github.com/nikeee">nikeee</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+            <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-62961705-3");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+  </body>
+</html>
+
