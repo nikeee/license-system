@@ -9,25 +9,20 @@ namespace LicenseSystem
     {
         private const string _publicKey = @"<RSAKeyValue><Modulus>8CKn78RI6h7vNOPMeMCeRCHegEgG1nR+X84B8b3sOZF6hAjDXF80ag1Zw1T0E+NVHmbPB8aLgRPmQPA351ZR8D+BCHooDlGqstLLHiqTu9bbqRVPti46XBeju3Fbi47euO+omH0sq7LCuIZ5s1WBmTc9ejkkfc/0rk3fAYaIRuE=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>";
 
-        private readonly bool _isValid;
-        public bool IsValid { get { return _isValid; } }
-
-        private readonly string _licensee;
-        public string Licensee { get { return _licensee; } }
-
-        private readonly LicenseType _type;
-        public LicenseType Type { get { return _type; } }
+        public bool IsValid { get; }
+        public string Licensee { get; }
+        public LicenseType Type { get; }
 
         protected License(string licensee, LicenseType type, byte[] verificationData)
         {
             if (string.IsNullOrEmpty(licensee))
-                throw new ArgumentNullException("licensee");
+                throw new ArgumentNullException(nameof(licensee));
             if (verificationData == null)
-                throw new ArgumentNullException("verificationData");
+                throw new ArgumentNullException(nameof(verificationData));
 
-            _licensee = licensee;
-            _type = type;
-            _isValid = ValidateLicense(verificationData);
+            Licensee = licensee;
+            Type = type;
+            IsValid = ValidateLicense(verificationData);
         }
 
         private bool ValidateLicense(byte[] signature)
@@ -36,10 +31,10 @@ namespace LicenseSystem
             // Dies kann man wie folgt umsetzen:
 
             // Standardisierung des Namens des Lizenznehmers
-            var licenseeGen = GeneralizeDataString(this._licensee); // "ERIKAMUSTERMANN"
+            var licenseeGen = GeneralizeDataString(Licensee); // "ERIKAMUSTERMANN"
 
             // Zusammenfüren des Namens "ERIKAMUSTERMANN" mit dem Int-Wert des Lizenztyps (z. B. 2 für "Commercial").
-            var dataStr = licenseeGen + (int)this._type; //ERIKAMUSTERMANN2
+            var dataStr = licenseeGen + (int)Type; //ERIKAMUSTERMANN2
 
             // Erstellen eines Byte-Arrays aus dem zusammengefügten String
             var dataBuffer = System.Text.Encoding.UTF8.GetBytes(dataStr);
