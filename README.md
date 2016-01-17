@@ -79,7 +79,7 @@ class License
         if (string.IsNullOrEmpty(licensee))
             throw new ArgumentNullException(nameof(licensee));
         if (verificationData == null)
-            throw new ArgumentNullException(typeof(verificationData));
+            throw new ArgumentNullException(nameof(verificationData));
 
         Licensee = licensee;
         Type = type;
